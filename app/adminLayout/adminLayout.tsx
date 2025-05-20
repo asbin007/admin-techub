@@ -34,27 +34,26 @@ import AdminSearch from "@/components/features/admin-search";
 import { ModeToggle } from "@/components/ui/mode-toogle";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { useAppDispatch } from "@/store/hooks";
+import { logout } from "@/store/authSlice";
 
 export default function AdminLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const router = useRouter();
 const dispatch=useAppDispatch()
-  const reduxToken = useAppSelector((store) => store.auth.user. );
-
   useEffect(() => {
-    const localToken = localStorage.getItem("tokenauth");
-    const loggedIn = !!reduxToken || !!localToken;
+    
+    const loggedIn= localStorage.getItem('tokenauth')
     if(!loggedIn){
       router.push('/user/login')
 
     }
-  }, [reduxToken]);
+  }, []);
   
   const handleLogout = () => {
     localStorage.removeItem("tokenauth");
-    dispatch(LogOut());
+    dispatch(logout());
     router.push("/user/login");
   };
   return (

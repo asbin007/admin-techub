@@ -26,11 +26,20 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import AdminLayout from "../adminLayout/adminLayout";
-import { useAppSelector } from "@/store/hooks";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { useEffect } from "react";
+import { fetchUsers } from "@/store/authSlice";
 
 export default function UserTable() {
 
+
     const{user}=useAppSelector((store)=>store.auth)
+    const dispatch=useAppDispatch()
+
+    useEffect(()=>{
+      dispatch(fetchUsers())
+
+    },[])
 
   return (
         <AdminLayout>
@@ -46,7 +55,8 @@ export default function UserTable() {
             <TableRow>
               <TableHead>Username</TableHead>
               <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
+                            <TableHead>Role</TableHead>
+
               <TableHead className="hidden md:table-cell">ID</TableHead>
               <TableHead>
                 <span className="sr-only">Actions</span>
@@ -58,6 +68,9 @@ export default function UserTable() {
               <TableRow key={user.id}>
                 <TableCell className="font-medium">{user.username}</TableCell>
                 <TableCell>{user.email}</TableCell>
+                                <TableCell>{user.role}</TableCell>
+
+
              
                 <TableCell className="hidden md:table-cell">{user.id}</TableCell>
                 <TableCell>
@@ -82,7 +95,7 @@ export default function UserTable() {
       </CardContent>
       <CardFooter>
         <div className="text-xs text-muted-foreground">
-          Showing <strong>1-{users.length}</strong> of <strong>{users.length}</strong> users
+          Showing <strong>1-{user.length}</strong> of <strong>{user.length}</strong> users
         </div>
       </CardFooter>
     </Card>

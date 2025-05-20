@@ -1,14 +1,16 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { AppDispatch } from "./store";
-import { APIS } from "../globals/http";
+import { API, APIS } from "../globals/http";
 
 export interface IUser {
-  id: string; // Added id property
+  id: string | null;
   username: string | null;
   email: string | null;
   password: string | null;
   token: string | null;
+  role:string|null
 }
+
 export enum Status {
   SUCCESS = "success",
   LOADING = "loading",
@@ -18,12 +20,11 @@ export enum Status {
 interface IInitialState {
   user: IUser[];
   status: Status;
-  
 }
 const initialState: IInitialState = {
   user: [],
+
   status: Status.LOADING,
-  
 };
 
 const userSlice = createSlice({
@@ -37,14 +38,21 @@ const userSlice = createSlice({
       state.user = action.payload;
     },
     deleteUser(state: IInitialState, action: PayloadAction<string>) {
-      const index = state.user.findIndex((users) => users.id === action.payload);
+      const index = state.user.findIndex(
+        (users) => users.id === action.payload
+      );
       if (index !== -1) {
         state.user.splice(index, 1);
       }
     },
-    setToken(state: IInitialState, action: PayloadAction<string>) {
-      if (state.user.length > 0) {
-        state.user[0].token = action.payload;
+    setToken(
+      state: IInitialState,
+      action: PayloadAction<{ id: string; token: string }>
+    ) {
+      const user = state.user.find((u) => u.id === action.payload.id);
+      if (user) {
+        user.token = action.payload.token;
+        localStorage.setItem("tokenauth", action.payload.token);
       }
     },
     logout(state: IInitialState) {
@@ -55,8 +63,35 @@ const userSlice = createSlice({
   },
 });
 
-export const { setStatus, setUsers, deleteUser,logout,setToken } = userSlice.actions;
+export const { setStatus, setUsers, deleteUser, logout, setToken } =
+  userSlice.actions;
 export default userSlice.reducer;
+
+export function loginUser(data:  { email: string; password: string }) {
+  return async function loginUserThunk(dispatch: AppDispatch) {
+    try {
+      const response = await API.post("/auth/logins", data);
+      if (response.status === 201) {
+        dispatch(setStatus(Status.SUCCESS));
+        console.log("res", response.data);
+        const token =
+          response.data.token || response.data.session?.access_token;
+
+        if (token) {
+          localStorage.setItem("tokenauth", token);
+          dispatch(setToken(token));
+        } else {
+          dispatch(setStatus(Status.ERROR));
+        }
+      } else {
+        dispatch(setStatus(Status.ERROR));
+      }
+    } catch (error) {
+      console.log(error);
+      dispatch(setStatus(Status.ERROR));
+    }
+  };
+}
 
 export function fetchUsers() {
   return async function fetchUsersThunk(dispatch: AppDispatch) {
