@@ -36,9 +36,9 @@ export default function LoginForm() {
     });
   };
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async(e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    dispatch(loginUser(data));
+    await dispatch(loginUser(data));
     if (user) {
       router.push("/");
     }

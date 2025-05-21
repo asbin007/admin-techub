@@ -32,30 +32,48 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import AdminSearch from "@/components/features/admin-search";
 import { ModeToggle } from "@/components/ui/mode-toogle";
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAppDispatch } from "@/store/hooks";
 import { logout } from "@/store/authSlice";
+import { useEffect, useState } from "react";
+import Cookies from "js-cookie";
 
 export default function AdminLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const router = useRouter();
 const dispatch=useAppDispatch()
-  useEffect(() => {
-    
-    const loggedIn= localStorage.getItem('tokenauth')
-    if(!loggedIn){
-      router.push('/user/login')
+  const [isChecking, setIsChecking] = useState(true);
 
-    }
-  }, []);
+  // useEffect(() => {
+    
+  //   const loggedIn= localStorage.getItem('tokenauth')
+  //   if(!loggedIn){
+  //     router.push('/user/login')
+
+  //   }
+  // }, []);
   
+  useEffect(() => {
+    const token = Cookies.get("tokenauth");
+    if (!token) {
+      router.push("/user/login");
+    }
+    else{
+      setIsChecking(false)
+    }
+    
+  }, [router]);
+
   const handleLogout = () => {
-    localStorage.removeItem("tokenauth");
     dispatch(logout());
     router.push("/user/login");
+
   };
+
+  if(isChecking){
+    return<div className="w-full h-screen flex  justify-center items-center">loading....</div>
+  }
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <div className="hidden border-r bg-muted/40 md:block">
@@ -88,6 +106,13 @@ const dispatch=useAppDispatch()
                 {/* <Badge className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
                   6
                 </Badge> */}
+              </Link>
+              <Link
+                href="/category "
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+              >
+                <Package className="h-4 w-4" />
+                Category
               </Link>
               <Link
                 href="/products "
@@ -169,6 +194,13 @@ const dispatch=useAppDispatch()
                   <Badge className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
                     6
                   </Badge>
+                </Link>
+                 <Link
+                  href="/category"
+                  className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
+                >
+                  <Package className="h-5 w-5" />
+                  Category
                 </Link>
                 <Link
                   href="/products"

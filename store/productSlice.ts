@@ -1,8 +1,14 @@
-import { IProduct, Status } from "./../globals/types/types";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { IProducts } from "../globals/types/types";
 import { AppDispatch, RootState } from "./store";
 import { APIS } from "../globals/http";
+import { Status } from "./authSlice";
+import { IProduct } from "@/app/products/types";
+
+interface IProducts {
+  products: IProduct[];
+  status: Status;
+  product: IProduct | null;
+}
 
 const initialState: IProducts = {
   products: [],
@@ -25,11 +31,28 @@ const productSlice = createSlice({
     setProduct(state: IProducts, action: PayloadAction<IProduct>) {
       state.product = action.payload;
     },
+    updateProduct(state: IProducts, action: PayloadAction<IProduct>) {
+      const index = state.products.findIndex((p) => p.id === action.payload.id);
+      if (index !== -1) {
+        state.products[index] = action.payload;
+      }
+      state.status = Status.SUCCESS;
+    },
+    removeProduct(state: IProducts, action: PayloadAction<string>) {
+      state.products = state.products.filter((p) => p.id !== action.payload);
+      state.status = Status.SUCCESS;
+    },
   },
 });
 
-export const { setStatus, setProduct, setProducts, addProductToProducts } =
-  productSlice.actions;
+export const {
+  setStatus,
+  setProduct,
+  setProducts,
+  addProductToProducts,
+  updateProduct,
+  removeProduct,
+} = productSlice.actions;
 export default productSlice.reducer;
 
 export function addProduct(data: IProduct) {
@@ -57,7 +80,7 @@ export function fetchProducts() {
   return async function fetchProductsThunk(dispatch: AppDispatch) {
     try {
       const response = await APIS.get("/product");
-      if (response.status === 201) {
+      if (response.status === 200) {
         dispatch(setProducts(response.data.data));
       } else {
         dispatch(setStatus(Status.ERROR));
@@ -96,6 +119,51 @@ export function fetchProductAdmin(id: string) {
         console.log(error);
         dispatch(setStatus(Status.ERROR));
       }
+    }
+  };
+}
+
+export function deleteProduct(id: string) {
+  return async function deleteProductThunk(dispatch: AppDispatch) {
+    try {
+      const res = await APIS.delete(`/product/${id}`);
+      if (res.status === 201) {
+        // Backend uses 201, ideally should be 204
+        dispatch(removeProduct(id));
+        return res.data;
+      } else {
+        dispatch(setStatus(Status.ERROR));
+        throw new Error(res.data.message || "Failed to delete product");
+      }
+    } catch (error: any) {
+      dispatch(setStatus(Status.ERROR));
+      throw new Error(
+        error.response?.data?.message || "Failed to delete product"
+      );
+    }
+  };
+}
+
+export function updateProducts(id: string, data: FormData) {
+  return async function updateProductsThunk(dispatch: AppDispatch) {
+    try {
+      const res = await APIS.patch(`/product/${id}`, data, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      if (res.status === 200) {
+        dispatch(updateProduct(res.data.data));
+        return res.data;
+      } else {
+        dispatch(setStatus(Status.ERROR));
+        throw new Error(res.data.message || "Failed to update product");
+      }
+    } catch (error: any) {
+      dispatch(setStatus(Status.ERROR));
+      throw new Error(
+        error.response?.data?.message || "Failed to update product"
+      );
     }
   };
 }

@@ -1,6 +1,7 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { AppDispatch } from "./store";
 import { API, APIS } from "../globals/http";
+import Cookies from "js-cookie";
 
 export interface IUser {
   id: string | null;
@@ -52,14 +53,12 @@ const userSlice = createSlice({
       const user = state.user.find((u) => u.id === action.payload.id);
       if (user) {
         user.token = action.payload.token;
-        localStorage.setItem("tokenauth", action.payload.token);
       }
     },
     logout(state: IInitialState) {
-      state.user = [];
-      state.status = Status.LOADING;
-      localStorage.removeItem("tokenauth");
-    },
+     state.user = [];
+  state.status = Status.LOADING;
+  Cookies.remove("tokenauth");     },
   },
 });
 
@@ -76,10 +75,12 @@ export function loginUser(data:  { email: string; password: string }) {
         console.log("res", response.data);
         const token =
           response.data.token || response.data.session?.access_token;
+          const userId=response.data.user?.id ??'default'
 
-        if (token) {
-          localStorage.setItem("tokenauth", token);
-          dispatch(setToken(token));
+        if (token &&userId) {
+          Cookies.set("tokenauth", token,{expires:7});
+          dispatch(setToken({token,id:userId}));
+          return token
         } else {
           dispatch(setStatus(Status.ERROR));
         }

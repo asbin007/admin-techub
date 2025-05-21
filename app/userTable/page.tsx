@@ -28,77 +28,86 @@ import {
 import AdminLayout from "../adminLayout/adminLayout";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { useEffect } from "react";
-import { fetchUsers } from "@/store/authSlice";
+import { deleteUserById, fetchUsers } from "@/store/authSlice";
 
 export default function UserTable() {
+  const { user } = useAppSelector((store) => store.auth);
+  const dispatch = useAppDispatch();
 
+  useEffect(() => {
+    dispatch(fetchUsers());
+  }, []);
 
-    const{user}=useAppSelector((store)=>store.auth)
-    const dispatch=useAppDispatch()
-
-    useEffect(()=>{
-      dispatch(fetchUsers())
-
-    },[])
+  const deleteUser = (id: string) => {
+    dispatch(deleteUserById(id));
+  };
 
   return (
-        <AdminLayout>
+    <AdminLayout>
+      <Card>
+        <CardHeader>
+          <CardTitle>Users</CardTitle>
+          <CardDescription>
+            Manage your users and view their details.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Username</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Role</TableHead>
 
-    <Card>
-      <CardHeader>
-        <CardTitle>Users</CardTitle>
-        <CardDescription>Manage your users and view their details.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Username</TableHead>
-              <TableHead>Email</TableHead>
-                            <TableHead>Role</TableHead>
-
-              <TableHead className="hidden md:table-cell">ID</TableHead>
-              <TableHead>
-                <span className="sr-only">Actions</span>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {user.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell className="font-medium">{user.username}</TableCell>
-                <TableCell>{user.email}</TableCell>
-                                <TableCell>{user.role}</TableCell>
-
-
-             
-                <TableCell className="hidden md:table-cell">{user.id}</TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button aria-haspopup="true" size="icon" variant="ghost">
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Toggle menu</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem>Edit</DropdownMenuItem>
-                      <DropdownMenuItem>Delete</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
+                <TableHead className="hidden md:table-cell">ID</TableHead>
+                <TableHead>
+                  <span className="sr-only">Actions</span>
+                </TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-      <CardFooter>
-        <div className="text-xs text-muted-foreground">
-          Showing <strong>1-{user.length}</strong> of <strong>{user.length}</strong> users
-        </div>
-      </CardFooter>
-    </Card>
+            </TableHeader>
+            <TableBody>
+              {user.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell className="font-medium">{user.username}</TableCell>
+                  <TableCell>{user.email}</TableCell>
+                  <TableCell>{user.role}</TableCell>
+
+                  <TableCell className="hidden md:table-cell">
+                    {user.id}
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          aria-haspopup="true"
+                          size="icon"
+                          variant="ghost"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Toggle menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem>Edit</DropdownMenuItem>
+                        <button onClick={() => deleteUser(user.id)}>
+                          <DropdownMenuItem>Delete</DropdownMenuItem>
+                        </button>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+        <CardFooter>
+          <div className="text-xs text-muted-foreground">
+            Showing <strong>1-{user.length}</strong> of{" "}
+            <strong>{user.length}</strong> users
+          </div>
+        </CardFooter>
+      </Card>
     </AdminLayout>
   );
 }
