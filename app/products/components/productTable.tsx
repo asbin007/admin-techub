@@ -38,11 +38,18 @@ import AdminLayout from "@/app/adminLayout/adminLayout";
 import { IProduct } from "../types";
 import { useCallback, useState } from "react";
 import ProductForm from "./productForm";
+import { useAppDispatch } from "@/store/hooks";
+import { deleteProduct } from "@/store/productSlice";
 
 export function ProductTable({ products }: { products: IProduct[] }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const openModal = useCallback(() => setIsModalOpen(true), []);
   const closeModal = useCallback(() => setIsModalOpen(false), []);
+  const dispatch = useAppDispatch();
+
+  const deleteProducts = (id: string) => {
+    dispatch(deleteProduct(id));
+  };
 
   return (
     <AdminLayout>
@@ -67,7 +74,9 @@ export function ProductTable({ products }: { products: IProduct[] }) {
               <DialogHeader>
                 <DialogTitle>Add New Product</DialogTitle>
               </DialogHeader>
-              <ProductForm closeModal={closeModal} />
+              <div className="h-screen ">
+                <ProductForm closeModal={closeModal} />
+              </div>
             </DialogContent>
           </Dialog>
         </CardHeader>
@@ -131,7 +140,7 @@ export function ProductTable({ products }: { products: IProduct[] }) {
                     {product.totalStock}
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
-                    {product.Category.categoryName}
+                    {product?.Category?.categoryName}
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
                     {product.Collection.collectionName}
@@ -160,7 +169,7 @@ export function ProductTable({ products }: { products: IProduct[] }) {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuItem>Edit</DropdownMenuItem>
-                        <DropdownMenuItem>Delete</DropdownMenuItem>
+                        <DropdownMenuItem onClick={()=>deleteProducts(product.id)}>Delete</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>

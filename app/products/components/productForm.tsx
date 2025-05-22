@@ -26,7 +26,7 @@ const ProductForm: React.FC<ModalProps> = ({ closeModal }) => {
   const { items } = useAppSelector((store) => store.category);
   const { collection } = useAppSelector((store) => store.collections);
   const { status } = useAppSelector((store) => store.adminProducts);
-  
+
   const [loading, setLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
@@ -59,27 +59,11 @@ const ProductForm: React.FC<ModalProps> = ({ closeModal }) => {
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    const { name, value, files } = e.target as HTMLInputElement;
-
-    if (name === "images" && files && files[0]) {
-      const file = files[0];
-      setFormData(prev => ({
-        ...prev,
-        images: file.name // or use a placeholder string, or upload and set the URL
-      }));
-      
-      // Create image preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }));
-    }
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: name == "images" ? (e.target.files[0] as File) : value,
+    });
   };
 
   const handleArrayChange = (
@@ -96,7 +80,10 @@ const ProductForm: React.FC<ModalProps> = ({ closeModal }) => {
     }));
   };
 
-  const handleSelectChange = (name: keyof IProduct, value: string | boolean) => {
+  const handleSelectChange = (
+    name: keyof IProduct,
+    value: string | boolean
+  ) => {
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -138,7 +125,7 @@ const ProductForm: React.FC<ModalProps> = ({ closeModal }) => {
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
       <div className="w-full max-w-2xl bg-white rounded-lg shadow-lg p-6">
         <h1 className="text-2xl font-bold mb-6 text-center">Add New Product</h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-2">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="name">Product Name</Label>
@@ -203,6 +190,17 @@ const ProductForm: React.FC<ModalProps> = ({ closeModal }) => {
               onChange={handleChange}
             />
           </div>
+          <div>
+            <Label htmlFor="images">Product Image</Label>
+            <Input
+              type="file"
+              id="images"
+              name="images"
+              accept="image/*"
+              onChange={handleChange}
+              required
+            />
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -210,9 +208,9 @@ const ProductForm: React.FC<ModalProps> = ({ closeModal }) => {
               <Select
                 value={formData.Category.id}
                 onValueChange={(value) => {
-                  const selected = items.find(item => item.id === value);
+                  const selected = items.find((item) => item.id === value);
                   if (selected) {
-                    setFormData(prev => ({
+                    setFormData((prev) => ({
                       ...prev,
                       Category: {
                         id: selected.id,
@@ -241,9 +239,9 @@ const ProductForm: React.FC<ModalProps> = ({ closeModal }) => {
               <Select
                 value={formData.Collection.id}
                 onValueChange={(value) => {
-                  const selected = collection.find(item => item.id === value);
+                  const selected = collection.find((item) => item.id === value);
                   if (selected) {
-                    setFormData(prev => ({
+                    setFormData((prev) => ({
                       ...prev,
                       Collection: {
                         id: selected.id,
@@ -363,27 +361,6 @@ const ProductForm: React.FC<ModalProps> = ({ closeModal }) => {
               rows={4}
               required
             />
-          </div>
-
-          <div>
-            <Label htmlFor="images">Product Image</Label>
-            <Input
-              type="file"
-              id="images"
-              name="images"
-              accept="image/*"
-              onChange={handleChange}
-              required
-            />
-            {imagePreview && (
-              <div className="mt-2">
-                <img 
-                  src={imagePreview} 
-                  alt="Preview" 
-                  className="h-32 object-cover rounded-md"
-                />
-              </div>
-            )}
           </div>
 
           <Button type="submit" className="w-full" disabled={loading}>
