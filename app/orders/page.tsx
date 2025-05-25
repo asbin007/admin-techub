@@ -1,3 +1,5 @@
+"use client";
+import * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -14,161 +16,139 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-  import AdminLayout from "../adminLayout/adminLayout";
+import AdminLayout from "../adminLayout/adminLayout";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { useEffect } from "react";
+import { fetchOrders } from "@/store/orderSlice";
+import Link from "next/link";
+
+// Enums
+export enum OrderStatus {
+  Preparation = "preparation",
+  Ontheway = "ontheway",
+  Delivered = "delivered",
+  Pending = "pending",
+  Cancelled = "cancelled",
+}
+
+export enum PaymentMethod {
+  Khalti = "khalti",
+  Esewa = "esewa",
+  COD = "cod",
+}
+
+export enum PaymentStatus {
+  Paid = "paid",
+  Unpaid = "unpaid",
+}
+
+// Interfaces
+
+
 
 export default function Orders() {
+  const dispatch = useAppDispatch();
+  const { items, status } = useAppSelector((store) => store.orders);
+
+  useEffect(() => {
+    dispatch(fetchOrders());
+  }, [dispatch]);
+
+  const statusBadgeMap: Record<OrderStatus, JSX.Element> = {
+    [OrderStatus.Preparation]: <Badge className="bg-blue-500">Preparation</Badge>,
+    [OrderStatus.Ontheway]: <Badge className="bg-yellow-500">On the way</Badge>,
+    [OrderStatus.Delivered]: <Badge className="bg-green-500">Delivered</Badge>,
+    [OrderStatus.Cancelled]: <Badge variant="destructive">Cancelled</Badge>,
+    [OrderStatus.Pending]: <Badge variant="outline">Pending</Badge>,
+  };
+
+  const paymentMethodMap: Record<PaymentMethod, string> = {
+    [PaymentMethod.Khalti]: "Khalti",
+    [PaymentMethod.Esewa]: "Esewa",
+    [PaymentMethod.COD]: "COD",
+  };
+
+  const paymentStatusMap: Record<PaymentStatus, JSX.Element> = {
+    [PaymentStatus.Paid]: <Badge className="bg-green-500">Paid</Badge>,
+    [PaymentStatus.Unpaid]: <Badge variant="destructive">Unpaid</Badge>,
+  };
+
+  const getStatusBadge = (status: string) => {
+    return statusBadgeMap[status as OrderStatus] ?? <Badge variant="outline">Pending</Badge>;
+  };
+
+  const getPaymentStatus = (status: string) => {
+    return paymentStatusMap[status as PaymentStatus] ?? (
+      <Badge variant="destructive">Unpaid</Badge>
+    );
+  };
+
+  if (status === "loading") {
+    return (
+      <AdminLayout>
+        <div className="flex justify-center items-center h-64">
+          <p>Loading orders...</p>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (status === "error") {
+    return (
+      <AdminLayout>
+        <div className="flex justify-center items-center h-64">
+          <p>Error loading orders</p>
+        </div>
+      </AdminLayout>
+    );
+  }
+
   return (
     <AdminLayout>
-    <Card>
-      <CardHeader className="px-7">
-        <CardTitle>Orders</CardTitle>
-        <CardDescription>Recent orders from your store.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Customer</TableHead>
-              <TableHead className="hidden sm:table-cell">Type</TableHead>
-              <TableHead className="hidden sm:table-cell">Status</TableHead>
-              <TableHead className="hidden md:table-cell">Date</TableHead>
-              <TableHead className="text-right">Amount</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow className="bg-accent">
-              <TableCell>
-                <div className="font-medium">Liam Johnson</div>
-                <div className="hidden text-sm text-muted-foreground md:inline">
-                  liam@example.com
-                </div>
-              </TableCell>
-              <TableCell className="hidden sm:table-cell">Sale</TableCell>
-              <TableCell className="hidden sm:table-cell">
-                <Badge className="text-xs" variant="secondary">
-                  Fulfilled
-                </Badge>
-              </TableCell>
-              <TableCell className="hidden md:table-cell">2023-06-23</TableCell>
-              <TableCell className="text-right">$250.00</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell>
-                <div className="font-medium">Olivia Smith</div>
-                <div className="hidden text-sm text-muted-foreground md:inline">
-                  olivia@example.com
-                </div>
-              </TableCell>
-              <TableCell className="hidden sm:table-cell">Refund</TableCell>
-              <TableCell className="hidden sm:table-cell">
-                <Badge className="text-xs" variant="outline">
-                  Declined
-                </Badge>
-              </TableCell>
-              <TableCell className="hidden md:table-cell">2023-06-24</TableCell>
-              <TableCell className="text-right">$150.00</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell>
-                <div className="font-medium">Noah Williams</div>
-                <div className="hidden text-sm text-muted-foreground md:inline">
-                  noah@example.com
-                </div>
-              </TableCell>
-              <TableCell className="hidden sm:table-cell">
-                Subscription
-              </TableCell>
-              <TableCell className="hidden sm:table-cell">
-                <Badge className="text-xs" variant="secondary">
-                  Fulfilled
-                </Badge>
-              </TableCell>
-              <TableCell className="hidden md:table-cell">2023-06-25</TableCell>
-              <TableCell className="text-right">$350.00</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell>
-                <div className="font-medium">Emma Brown</div>
-                <div className="hidden text-sm text-muted-foreground md:inline">
-                  emma@example.com
-                </div>
-              </TableCell>
-              <TableCell className="hidden sm:table-cell">Sale</TableCell>
-              <TableCell className="hidden sm:table-cell">
-                <Badge className="text-xs" variant="secondary">
-                  Fulfilled
-                </Badge>
-              </TableCell>
-              <TableCell className="hidden md:table-cell">2023-06-26</TableCell>
-              <TableCell className="text-right">$450.00</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell>
-                <div className="font-medium">Liam Johnson</div>
-                <div className="hidden text-sm text-muted-foreground md:inline">
-                  liam@example.com
-                </div>
-              </TableCell>
-              <TableCell className="hidden sm:table-cell">Sale</TableCell>
-              <TableCell className="hidden sm:table-cell">
-                <Badge className="text-xs" variant="secondary">
-                  Fulfilled
-                </Badge>
-              </TableCell>
-              <TableCell className="hidden md:table-cell">2023-06-23</TableCell>
-              <TableCell className="text-right">$250.00</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell>
-                <div className="font-medium">Liam Johnson</div>
-                <div className="hidden text-sm text-muted-foreground md:inline">
-                  liam@example.com
-                </div>
-              </TableCell>
-              <TableCell className="hidden sm:table-cell">Sale</TableCell>
-              <TableCell className="hidden sm:table-cell">
-                <Badge className="text-xs" variant="secondary">
-                  Fulfilled
-                </Badge>
-              </TableCell>
-              <TableCell className="hidden md:table-cell">2023-06-23</TableCell>
-              <TableCell className="text-right">$250.00</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell>
-                <div className="font-medium">Olivia Smith</div>
-                <div className="hidden text-sm text-muted-foreground md:inline">
-                  olivia@example.com
-                </div>
-              </TableCell>
-              <TableCell className="hidden sm:table-cell">Refund</TableCell>
-              <TableCell className="hidden sm:table-cell">
-                <Badge className="text-xs" variant="outline">
-                  Declined
-                </Badge>
-              </TableCell>
-              <TableCell className="hidden md:table-cell">2023-06-24</TableCell>
-              <TableCell className="text-right">$150.00</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell>
-                <div className="font-medium">Emma Brown</div>
-                <div className="hidden text-sm text-muted-foreground md:inline">
-                  emma@example.com
-                </div>
-              </TableCell>
-              <TableCell className="hidden sm:table-cell">Sale</TableCell>
-              <TableCell className="hidden sm:table-cell">
-                <Badge className="text-xs" variant="secondary">
-                  Fulfilled
-                </Badge>
-              </TableCell>
-              <TableCell className="hidden md:table-cell">2023-06-26</TableCell>
-              <TableCell className="text-right">$450.00</TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
-</AdminLayout>  );
+      <Card>
+        <CardHeader className="px-7">
+          <CardTitle>Orders</CardTitle>
+          <CardDescription>Recent orders from your store.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Order ID</TableHead>
+                <TableHead>Items</TableHead>
+                <TableHead>Payment Method</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Payment Status</TableHead>
+                <TableHead className="text-right">Amount</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {[...items]
+                .sort(
+                  (a, b) =>
+                    new Date(b.OrderDetail.createdAt).getTime() -
+                    new Date(a.OrderDetail.createdAt).getTime()
+                )
+                .map((order) => (
+                  <TableRow key={order.id}>
+                    <TableCell className="font-medium">
+                      <Link href={`/orderdetails/${order.id}`}>{order.id}</Link>
+                    </TableCell>
+                    <TableCell>{order.OrderDetail?.quantity || 0} items</TableCell>
+                    <TableCell>
+                      {paymentMethodMap[order.Payment?.paymentMethod] || "Unknown"}
+                    </TableCell>
+                    <TableCell>{getStatusBadge(order.status)}</TableCell>
+                    <TableCell>{getPaymentStatus(order.Payment?.paymentStatus)}</TableCell>
+                    <TableCell className="text-right">
+                      ${order.totalPrice.toFixed(2)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </AdminLayout>
+  );
 }
