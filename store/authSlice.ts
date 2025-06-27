@@ -1,7 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { AppDispatch } from "./store";
 import { API, APIS } from "../globals/http";
-import Cookies from "js-cookie";
 
 export interface IUser {
   id: string | null;
@@ -9,7 +8,7 @@ export interface IUser {
   email: string | null;
   password: string | null;
   token: string | null;
-  role:string|null
+  role: string | null;
 }
 
 export enum Status {
@@ -56,9 +55,11 @@ const userSlice = createSlice({
       }
     },
     logout(state: IInitialState) {
-     state.user = [];
-  state.status = Status.LOADING;
-  Cookies.remove("tokenauth");     },
+      state.user = [];
+      state.status = Status.LOADING;
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+    },
   },
 });
 
@@ -66,21 +67,20 @@ export const { setStatus, setUsers, deleteUser, logout, setToken } =
   userSlice.actions;
 export default userSlice.reducer;
 
-export function loginUser(data:  { email: string; password: string }) {
+export function loginUser(data: { email: string; password: string }) {
   return async function loginUserThunk(dispatch: AppDispatch) {
     try {
       const response = await API.post("/auth/logins", data);
-      if (response.status === 201) {
+      if (response.status === 200) {
+        const { id, username, email } = response.data;
         dispatch(setStatus(Status.SUCCESS));
         console.log("res", response.data);
         const token =
           response.data.token || response.data.session?.access_token;
-          const userId=response.data.user?.id ??'default'
 
-        if (token &&userId) {
-          Cookies.set("tokenauth", token,{expires:7});
-          dispatch(setToken({token,id:userId}));
-          return token
+        if (token) {
+          localStorage.setItem("token", token);
+          dispatch(setUsers([{ id, username, email, password: null, token, role: null }]));
         } else {
           dispatch(setStatus(Status.ERROR));
         }
@@ -99,7 +99,7 @@ export function fetchUsers() {
     try {
       const response = await APIS.get("/auth/users");
 
-      if (response.status === 201) {
+      if (response.status === 200) {
         dispatch(setStatus(Status.SUCCESS));
         dispatch(setUsers(response.data.data));
       } else {
@@ -125,6 +125,24 @@ export function deleteUserById(id: string) {
     } catch (error) {
       console.log(error);
       dispatch(setStatus(Status.ERROR));
+    }
+  };
+}
+
+export function loadUserFromStorage() {
+  return function loadUserThunk(dispatch: AppDispatch) {
+    const token = localStorage.getItem("token");
+    const user = localStorage.getItem("user");
+
+    if (token && user) {
+      try {
+        const parsedUser = JSON.parse(user);
+        dispatch(setUsers([{ ...parsedUser, token }]));
+        dispatch(setStatus(Status.SUCCESS));
+      } catch {
+        console.error("Failed to parse user from storage");
+        dispatch(setStatus(Status.ERROR));
+      }
     }
   };
 }

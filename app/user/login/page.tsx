@@ -37,9 +37,10 @@ export default function LoginForm() {
   };
 
   const handleSubmit = async(e: FormEvent<HTMLFormElement>) => {
+    const token= localStorage.getItem('token')
     e.preventDefault();
     await dispatch(loginUser(data));
-    if (user) {
+    if (token && user) {
       router.push("/");
     }
   };

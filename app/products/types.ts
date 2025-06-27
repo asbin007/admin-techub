@@ -1,26 +1,30 @@
+
 export interface IProduct {
   id: string;
-  images: string;
   name: string;
-  description: string;
-
   brand: string;
-  discount: number;
-  originalPrice: number;
   price: number;
+  originalPrice: number;
+  image: string[];
   inStock: boolean;
   isNew: boolean;
-  totalStock: number;
+  size: string[];
+  color: string[];
+  badge: string;
+  discount: number;
+  RAM: string[];
+  ROM: string[];
+  spec: string[];
   createdAt: string;
-  features: string[] |string;
-  colors: string[]| string;
-  sizes: string[] |string;
-  Category: {
-    id: string;
-    categoryName: string;
-  };
-  Collection: {
-    id: string;
-    collectionName: string;
-  };
+  updatedAt: string;
+  categoryId: string;
+  Category:{
+    categoryName:string
+  }
+  description:string[],
+  keyFeatures:string[],
+  totalStock:number,
+
+ 
+
 }

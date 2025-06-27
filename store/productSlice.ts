@@ -63,7 +63,7 @@ export function addProduct(data: IProduct) {
           "Content-Type": "multipart/form-data",
         },
       });
-      if (res.status === 201) {
+      if (res.status === 200) {
         dispatch(setStatus(Status.SUCCESS));
         dispatch(addProductToProducts(res.data.data));
       } else {

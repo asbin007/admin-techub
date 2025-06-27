@@ -54,7 +54,7 @@ export default function Orders() {
     dispatch(fetchOrders());
   }, [dispatch]);
 
-  const statusBadgeMap: Record<OrderStatus, JSX.Element> = {
+  const statusBadgeMap: Record<OrderStatus, React.JSX.Element> = {
     [OrderStatus.Preparation]: <Badge className="bg-blue-500">Preparation</Badge>,
     [OrderStatus.Ontheway]: <Badge className="bg-yellow-500">On the way</Badge>,
     [OrderStatus.Delivered]: <Badge className="bg-green-500">Delivered</Badge>,
@@ -68,7 +68,7 @@ export default function Orders() {
     [PaymentMethod.COD]: "COD",
   };
 
-  const paymentStatusMap: Record<PaymentStatus, JSX.Element> = {
+  const paymentStatusMap: Record<PaymentStatus, React.JSX.Element> = {
     [PaymentStatus.Paid]: <Badge className="bg-green-500">Paid</Badge>,
     [PaymentStatus.Unpaid]: <Badge variant="destructive">Unpaid</Badge>,
   };
