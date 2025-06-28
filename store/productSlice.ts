@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { AppDispatch, RootState } from "./store";
-import { APIS } from "../globals/http";
+import { API, APIS } from "../globals/http";
 import { Status } from "./authSlice";
 import { IProduct } from "@/app/products/types";
 
@@ -108,7 +108,7 @@ export function fetchProductAdmin(id: string) {
       dispatch(setStatus(Status.SUCCESS));
     } else {
       try {
-        const response = await APIS.get("/product/" + id);
+        const response = await API  .get("/product/" + id);
         if (response.status === 200) {
           dispatch(setStatus(Status.SUCCESS));
           dispatch(setProduct(response.data.data));

@@ -111,6 +111,36 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
 }
+.colorful {
+  --background: #f9fafb;          /* very light gray / off-white */
+  --foreground: #374151;          /* cool dark gray (text) */
+  --card: #ffffff;                /* pure white cards */
+  --card-foreground: #374151;     /* same dark gray text */
+  --popover: #ffffff;
+  --popover-foreground: #374151;
+  --primary: #3b82f6;             /* Tailwind’s blue-500 */
+  --primary-foreground: #ffffff;  /* white text on blue */
+  --secondary: #2563eb;           /* Tailwind’s blue-600 */
+  --secondary-foreground: #e0e7ff;/* very light blue text */
+  --accent: #10b981;              /* Tailwind’s emerald-500 */
+  --accent-foreground: #ffffff;   /* white text */
+  --muted: #f3f4f6;              /* light gray */
+  --muted-foreground: #6b7280;    /* gray-500 */
+  --border: #e5e7eb;             /* gray-200 */
+  --input: #f9fafb;              /* same as background */
+  --ring: #3b82f6;               /* same as primary */
+  --sidebar: #ffffff;
+  --sidebar-foreground: #374151;
+  --sidebar-primary: #3b82f6;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #10b981;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #e5e7eb;
+  --sidebar-ring: #3b82f6;
+}
+
+
+
 
 @layer base {
   * {
