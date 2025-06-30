@@ -1,16 +1,18 @@
-"use client"
 
-import React, { ChangeEvent, FormEvent, useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+"use client";
+
+import React, { ChangeEvent, FormEvent, useEffect, useState } from "react";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Plus,
   X,
@@ -30,22 +32,21 @@ import {
   CheckCircle2,
   DollarSign,
   BarChart3,
-} from "lucide-react"
-import { useAppDispatch, useAppSelector } from "@/store/hooks"
-import { addProduct, updateProduct } from "@/store/productSlice"
-import { fetchCategoryItems, resetStatus } from "@/store/categoriesSlice"
-import { fetchCollection } from "@/store/collectionSlice"
-import { IProduct } from "../types"
-import { Status } from "@/store/authSlice"
+} from "lucide-react";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { createProduct, updateProduct } from "@/store/productSlice";
+import { fetchCategoryItems, resetStatus } from "@/store/categoriesSlice";
+import { IProduct } from "../types";
+import { Status } from "@/store/authSlice";
 
 interface ModalProps {
-  closeModal: () => void
-  product?: IProduct // Optional product for editing
+  closeModal: () => void;
+  product?: IProduct;
 }
 
-const ramOptions = ["4GB", "8GB", "16GB", "32GB", "64GB", "128GB"]
-const romOptions = ["128GB SSD", "256GB SSD", "512GB SSD", "1TB SSD", "2TB SSD", "4TB SSD", "1TB HDD", "2TB HDD"]
-const sizeOptions = ["11-inch", "12-inch", "13-inch", "14-inch", "15-inch", "16-inch", "17-inch", "18-inch"]
+const ramOptions = ["4GB", "8GB", "16GB", "32GB", "64GB", "128GB"];
+const romOptions = ["128GB SSD", "256GB SSD", "512GB SSD", "1TB SSD", "2TB SSD", "4TB SSD", "1TB HDD", "2TB HDD"];
+const sizeOptions = ["11-inch", "12-inch", "13-inch", "14-inch", "15-inch", "16-inch", "17-inch", "18-inch"];
 const colorOptions = [
   "Silver",
   "Space Gray",
@@ -57,12 +58,12 @@ const colorOptions = [
   "Rose Gold",
   "Midnight",
   "Starlight",
-]
+];
 
 const ProductForm: React.FC<ModalProps> = ({ closeModal, product }) => {
-  const dispatch = useAppDispatch()
-  const { items: categories } = useAppSelector((store) => store.category)
-  const { status } = useAppSelector((store) => store.adminProducts)
+  const dispatch = useAppDispatch();
+  const { items: categories } = useAppSelector((store) => store.category);
+  const { status } = useAppSelector((store) => store.adminProducts);
 
   const [formData, setFormData] = useState<Partial<IProduct>>({
     id: product?.id || `product_${Date.now()}`,
@@ -84,98 +85,111 @@ const ProductForm: React.FC<ModalProps> = ({ closeModal, product }) => {
     description: product?.description || [],
     keyFeatures: product?.keyFeatures || [],
     totalStock: product?.totalStock || 0,
-  })
+  });
 
-  const [errors, setErrors] = useState<Record<string, string>>({})
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [newImage, setNewImage] = useState<File | null>(null)
-  const [imagePreview, setImagePreview] = useState<string | null>(null)
-  const [newSpec, setNewSpec] = useState("")
-  const [newDescription, setNewDescription] = useState("")
-  const [newKeyFeature, setNewKeyFeature] = useState("")
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [newImages, setNewImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [newSpec, setNewSpec] = useState("");
+  const [newDescription, setNewDescription] = useState("");
+  const [newKeyFeature, setNewKeyFeature] = useState("");
 
-  const CLOUDINARY_UPLOAD_PRESET = "your_upload_preset" // Replace with your Cloudinary upload preset
-  const CLOUDINARY_CLOUD_NAME = "dxpe7jikz"
-  const CLOUDINARY_VERSION = "v1750340657"
+  const CLOUDINARY_UPLOAD_PRESET = "your_upload_preset"; // Replace with your Cloudinary upload preset
+  const CLOUDINARY_CLOUD_NAME = "dxpe7jikz";
+  const CLOUDINARY_VERSION = "v1750340657";
 
   const validateForm = () => {
-    const newErrors: Record<string, string> = {}
+    const newErrors: Record<string, string> = {};
 
-    if (!formData.name?.trim()) newErrors.name = "Product name is required"
-    if (!formData.brand) newErrors.brand = "Brand selection is required"
-    if (!formData.price || formData.price <= 0) newErrors.price = "Valid price is required"
-    if (!formData.categoryId) newErrors.categoryId = "Category selection is required"
-    if (!formData.totalStock || formData.totalStock < 0) newErrors.totalStock = "Valid stock quantity is required"
-    if (!formData.image?.length) newErrors.image = "At least one product image is required"
-    if (!formData.RAM?.length) newErrors.RAM = "At least one RAM option is required"
-    if (!formData.ROM?.length) newErrors.ROM = "At least one storage option is required"
+    if (!formData.name?.trim()) newErrors.name = "Product name is required";
+    if (!formData.brand) newErrors.brand = "Brand selection is required";
+    if (!formData.price || formData.price <= 0) newErrors.price = "Valid price is required";
+    if (!formData.categoryId) newErrors.categoryId = "Category selection is required";
+    if (!formData.totalStock || formData.totalStock < 0) newErrors.totalStock = "Valid stock quantity is required";
+    if (!formData.image?.length && !newImages.length) newErrors.image = "At least one product image is required";
+    if (!formData.RAM?.length) newErrors.RAM = "At least one RAM option is required";
+    if (!formData.ROM?.length) newErrors.ROM = "At least one storage option is required";
 
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleInputChange = (field: keyof IProduct, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
+    setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: "" }))
+      setErrors((prev) => ({ ...prev, [field]: "" }));
     }
-  }
+  };
 
   const addToArray = (field: keyof IProduct, value: string) => {
     if (value.trim()) {
-      const currentArray = (formData[field] as string[]) || []
+      const currentArray = (formData[field] as string[]) || [];
       setFormData((prev) => ({
         ...prev,
         [field]: [...currentArray, value.trim()],
-      }))
+      }));
       if (errors[field]) {
-        setErrors((prev) => ({ ...prev, [field]: "" }))
+        setErrors((prev) => ({ ...prev, [field]: "" }));
       }
     }
-  }
+  };
 
   const removeFromArray = (field: keyof IProduct, index: number) => {
-    const currentArray = (formData[field] as string[]) || []
+    const currentArray = (formData[field] as string[]) || [];
     setFormData((prev) => ({
       ...prev,
       [field]: currentArray.filter((_, i) => i !== index),
-    }))
-  }
+    }));
+  };
 
   const toggleArrayItem = (field: keyof IProduct, value: string) => {
-    const currentArray = (formData[field] as string[]) || []
+    const currentArray = (formData[field] as string[]) || [];
     if (currentArray.includes(value)) {
       setFormData((prev) => ({
         ...prev,
         [field]: currentArray.filter((item) => item !== value),
-      }))
+      }));
     } else {
       setFormData((prev) => ({
         ...prev,
         [field]: [...currentArray, value],
-      }))
+      }));
     }
     if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: "" }))
+      setErrors((prev) => ({ ...prev, [field]: "" }));
     }
-  }
+  };
 
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      setNewImage(file)
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string)
-      }
-      reader.readAsDataURL(file)
+    const files = e.target.files;
+    if (files) {
+      const newFiles = Array.from(files);
+      setNewImages((prev) => [...prev, ...newFiles]);
+
+      const newPreviews = newFiles.map((file) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        return new Promise<string>((resolve) => {
+          reader.onloadend = () => resolve(reader.result as string);
+        });
+      });
+
+      Promise.all(newPreviews).then((previews) => {
+        setImagePreviews((prev) => [...prev, ...previews]);
+      });
     }
-  }
+  };
+
+  const removeNewImage = (index: number) => {
+    setNewImages((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const uploadImageToCloudinary = async (file: File): Promise<string> => {
-    const formData = new FormData()
-    formData.append("file", file)
-    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET)
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
 
     try {
       const response = await fetch(
@@ -184,82 +198,135 @@ const ProductForm: React.FC<ModalProps> = ({ closeModal, product }) => {
           method: "POST",
           body: formData,
         }
-      )
-      const data = await response.json()
-      return `/uploads/${data.public_id}`
+      );
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || "Failed to upload image");
+      }
+      const data = await response.json();
+      return `/uploads/${data.public_id}`;
     } catch (error) {
-      console.error("Error uploading image to Cloudinary:", error)
-      throw new Error("Failed to upload image")
+      console.error("Error uploading image to Cloudinary:", error);
+      throw error;
     }
-  }
+  };
 
   const calculateDiscount = () => {
     if (formData.originalPrice && formData.price && formData.originalPrice > formData.price) {
-      return Math.round(((formData.originalPrice - formData.price) / formData.originalPrice) * 100)
+      return Math.round(((formData.originalPrice - formData.price) / formData.originalPrice) * 100);
     }
-    return 0
-  }
+    return 0;
+  };
 
   const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!validateForm()) {
-      return
+      return;
     }
 
-    setIsSubmitting(true)
+    setIsSubmitting(true);
 
     try {
-      let imageUrls = formData.image || []
-      if (newImage) {
-        const uploadedImage = await uploadImageToCloudinary(newImage)
-        imageUrls = [...imageUrls, uploadedImage]
+      let imageUrls = formData.image || [];
+      if (newImages.length > 0) {
+        const uploadedImages = await Promise.all(
+          newImages.map((file) => uploadImageToCloudinary(file))
+        );
+        imageUrls = [...imageUrls, ...uploadedImages];
       }
 
       const productData = {
         ...formData,
         id: formData.id || `product_${Date.now()}`,
+        name: formData.name ?? "",
+        brand: formData.brand ?? "",
+        price: formData.price ?? 0,
+        originalPrice: formData.originalPrice ?? 0,
         image: imageUrls,
+        inStock: formData.inStock ?? true,
+        isNew: formData.isNew ?? false,
+        size: formData.size ?? [],
+        color: formData.color ?? [],
+        badge: formData.badge ?? "",
         discount: calculateDiscount(),
+        RAM: formData.RAM ?? [],
+        ROM: formData.ROM ?? [],
+        spec: formData.spec ?? [],
+        categoryId: formData.categoryId ?? "",
+        description: formData.description ?? [],
+        keyFeatures: formData.keyFeatures ?? [],
+        totalStock: formData.totalStock ?? 0,
         createdAt: formData.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         Category: {
           id: formData.categoryId || "",
           categoryName: categories.find((cat) => cat.id === formData.categoryId)?.categoryName || "",
         },
-        categoryId: formData.categoryId || "",
-      }
+      };
 
       if (product) {
-        await dispatch(updateProduct(productData)).unwrap()
+        await dispatch(updateProduct(productData))
       } else {
-        await dispatch(addProduct(productData)).unwrap()
+        await dispatch(createProduct(productData))
       }
+
+      // Reset form after successful submission
+      setFormData({
+        id: `product_${Date.now()}`,
+        name: "",
+        brand: "",
+        price: 0,
+        originalPrice: 0,
+        image: [],
+        inStock: true,
+        isNew: false,
+        size: [],
+        color: [],
+        badge: "",
+        discount: 0,
+        RAM: [],
+        ROM: [],
+        spec: [],
+        categoryId: "",
+        description: [],
+        keyFeatures: [],
+        totalStock: 0,
+      });
+      setNewImages([]);
+      setImagePreviews([]);
+      setNewSpec("");
+      setNewDescription("");
+      setNewKeyFeature("");
     } catch (error) {
-      console.error("Error saving product:", error)
-      setErrors((prev) => ({ ...prev, submit: "Failed to save product. Please try again." }))
+      console.error("Error saving product:", error);
+      setErrors((prev) => ({ ...prev, submit: "Failed to save product. Please try again." }));
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
+
+  const handlePreview = () => {
+    localStorage.setItem("productPreview", JSON.stringify(formData));
+    window.open("/preview/product", "_blank");
+  };
 
   useEffect(() => {
-    dispatch(fetchCategoryItems())
-    dispatch(fetchCollection())
-  }, [dispatch])
+    dispatch(fetchCategoryItems());
+  }, [dispatch]);
 
   useEffect(() => {
     if (status === Status.SUCCESS) {
-      closeModal()
-      dispatch(resetStatus())
+      closeModal();
+      dispatch(resetStatus());
     }
-  }, [status, closeModal, dispatch])
+  }, [status, closeModal, dispatch]);
 
-  const selectedCategory = categories.find((cat) => cat.id === formData.categoryId)
-  const discountPercentage = calculateDiscount()
+  const selectedCategory = categories.find((cat) => cat.id === formData.categoryId);
+  const discountPercentage = calculateDiscount();
 
   return (
-    <div className="fixed inset-0 w-full h-full bg-white overflow-y-auto">
+    <div className="w-full">
       {/* Header */}
       <div className="bg-white border-b shadow-sm p-6 sticky top-0 z-10">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 max-w-7xl mx-auto">
@@ -278,7 +345,7 @@ const ProductForm: React.FC<ModalProps> = ({ closeModal, product }) => {
             <Button
               variant="outline"
               className="h-10 bg-transparent flex-1 sm:flex-none border-gray-300 hover:bg-gray-100"
-              onClick={() => alert("Preview not implemented")} // Replace with actual preview logic
+              onClick={handlePreview}
             >
               <Eye className="w-4 h-4 mr-2" />
               Preview
@@ -391,7 +458,7 @@ const ProductForm: React.FC<ModalProps> = ({ closeModal, product }) => {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                     <div className="space-y-2">
                       <Label htmlFor="price" className="text-sm font-medium text-gray-700">
-                        Current Price <span className="text-red-500">*</span>
+                        Current Price (NPR) <span className="text-red-500">*</span>
                       </Label>
                       <div className="relative">
                         <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -415,7 +482,7 @@ const ProductForm: React.FC<ModalProps> = ({ closeModal, product }) => {
 
                     <div className="space-y-2">
                       <Label htmlFor="originalPrice" className="text-sm font-medium text-gray-700">
-                        Original Price
+                        Original Price (NPR)
                       </Label>
                       <div className="relative">
                         <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -490,12 +557,6 @@ const ProductForm: React.FC<ModalProps> = ({ closeModal, product }) => {
                       )}
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="collection" className="text-sm font-medium text-gray-700">
-                        Collection
-                      </Label>
-                     
-                    </div>
                   </div>
 
                   <div className="space-y-2">
@@ -545,82 +606,79 @@ const ProductForm: React.FC<ModalProps> = ({ closeModal, product }) => {
 
             {/* Media Tab */}
             <TabsContent value="media" className="space-y-6">
-              <Card className="border-gray-200 shadow-sm">
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <ImageIcon className="w-5 h-5 text-blue-600" />
-                    Product Images
-                  </CardTitle>
-                  <CardDescription className="text-sm text-gray-500">
-                    Upload high-quality images of the product
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center">
-                    <Upload className="w-10 h-10 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-base font-medium text-gray-900 mb-2">Upload Product Images</h3>
-                    <p className="text-sm text-gray-500 mb-4">Select an image file to upload to Cloudinary</p>
-                    <Input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageChange}
-                      className="mx-auto max-w-md h-10"
-                    />
-                    {imagePreview && (
-                      <div className="mt-4">
+              <div className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center">
+                <Upload className="w-10 h-10 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-base font-medium text-gray-900 mb-2">Upload Product Images</h3>
+                <p className="text-sm text-gray-500 mb-4">Select multiple image files to upload to Cloudinary</p>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageChange}
+                  className="mx-auto max-w-md h-10 text-gray-700"
+                />
+                {imagePreviews.length > 0 && (
+                  <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    {imagePreviews.map((preview, index) => (
+                      <div key={index} className="relative">
                         <img
-                          src={imagePreview}
-                          alt="Image Preview"
-                          className="max-w-[200px] mx-auto rounded-lg"
+                          src={preview}
+                          alt={`Image Preview ${index + 1}`}
+                          className="max-w-[150px] h-auto rounded-lg"
                         />
+                        <button
+                          type="button"
+                          className="absolute top-1 right-1 p-1 bg-white rounded-full text-red-500 hover:bg-gray-100"
+                          onClick={() => removeNewImage(index)}
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
                       </div>
-                    )}
+                    ))}
                   </div>
+                )}
+              </div>
 
-                  {errors.image && (
-                    <Alert variant="destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>{errors.image}</AlertDescription>
-                    </Alert>
-                  )}
+              {errors.image && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-md flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-red-600" />
+                  <p className="text-sm text-red-600">{errors.image}</p>
+                </div>
+              )}
 
-                  {formData.image && formData.image.length > 0 && (
-                    <div className="space-y-4">
-                      <h4 className="font-medium text-gray-900 text-base">
-                        Added Images ({formData.image.length})
-                      </h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {formData.image.map((img, index) => (
-                          <div key={index} className="relative group border border-gray-200 rounded-lg p-4 bg-gray-50">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                                  <ImageIcon className="w-4 h-4 text-blue-600" />
-                                </div>
-                                <div>
-                                  <p className="font-medium text-sm">Image {index + 1}</p>
-                                  <p className="text-xs text-gray-500 truncate max-w-[150px]">
-                                    {img.startsWith("/uploads") ? `Cloudinary: ${img}` : img}
-                                  </p>
-                                </div>
-                              </div>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => removeFromArray("image", index)}
-                                className="text-gray-400 hover:text-red-500"
-                              >
-                                <X className="w-4 h-4" />
-                              </Button>
+              {formData.image && formData.image.length > 0 && (
+                <div className="space-y-4">
+                  <h4 className="font-medium text-gray-900 text-base">
+                    Existing Images ({formData.image.length})
+                  </h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    {formData.image.map((img, index) => (
+                      <div key={index} className="relative border border-gray-200 rounded-lg p-4 bg-gray-50">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                              <ImageIcon className="w-4 h-4 text-blue-600" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-sm">Image {index + 1}</p>
+                              <p className="text-xs text-gray-500 truncate max-w-[150px]">
+                                {img.startsWith("/uploads") ? `Cloudinary: ${img}` : img}
+                              </p>
                             </div>
                           </div>
-                        ))}
+                          <button
+                            type="button"
+                            className="p-1 text-gray-400 hover:text-red-500"
+                            onClick={() => removeFromArray("image", index)}
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
             </TabsContent>
 
             {/* Specifications Tab */}
@@ -755,8 +813,8 @@ const ProductForm: React.FC<ModalProps> = ({ closeModal, product }) => {
                       <Button
                         type="button"
                         onClick={() => {
-                          addToArray("spec", newSpec)
-                          setNewSpec("")
+                          addToArray("spec", newSpec);
+                          setNewSpec("");
                         }}
                         disabled={!newSpec.trim()}
                         className="h-10"
@@ -824,8 +882,8 @@ const ProductForm: React.FC<ModalProps> = ({ closeModal, product }) => {
                       <Button
                         type="button"
                         onClick={() => {
-                          addToArray("description", newDescription)
-                          setNewDescription("")
+                          addToArray("description", newDescription);
+                          setNewDescription("");
                         }}
                         disabled={!newDescription.trim()}
                         className="h-10"
@@ -848,7 +906,7 @@ const ProductForm: React.FC<ModalProps> = ({ closeModal, product }) => {
                               size="sm"
                               onClick={() => removeFromArray("description", index)}
                               className="text-gray-400 hover:text-red-500"
-                            >
+                              >
                               <X className="w-4 h-4" />
                             </Button>
                           </div>
@@ -879,8 +937,8 @@ const ProductForm: React.FC<ModalProps> = ({ closeModal, product }) => {
                       <Button
                         type="button"
                         onClick={() => {
-                          addToArray("keyFeatures", newKeyFeature)
-                          setNewKeyFeature("")
+                          addToArray("keyFeatures", newKeyFeature);
+                          setNewKeyFeature("");
                         }}
                         disabled={!newKeyFeature.trim()}
                         className="h-10"
@@ -942,7 +1000,7 @@ const ProductForm: React.FC<ModalProps> = ({ closeModal, product }) => {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Price</span>
-                  <span className="font-medium">${formData.price || 0}</span>
+                  <span className="font-medium">NPR {formData.price || 0}</span>
                 </div>
                 {discountPercentage > 0 && (
                   <div className="flex justify-between items-center">
@@ -975,7 +1033,7 @@ const ProductForm: React.FC<ModalProps> = ({ closeModal, product }) => {
                 <div className="flex items-center justify-between">
                   <span>Images</span>
                   <CheckCircle2
-                    className={`w-4 h-4 ${formData.image?.length ? "text-green-500" : "text-gray-300"}`}
+                    className={`w-4 h-4 ${formData.image?.length || newImages.length ? "text-green-500" : "text-gray-300"}`}
                   />
                 </div>
                 <div className="flex items-center justify-between">
@@ -1016,7 +1074,7 @@ const ProductForm: React.FC<ModalProps> = ({ closeModal, product }) => {
               <Button
                 variant="outline"
                 className="w-full h-10 border-gray-300 hover:bg-gray-100"
-                onClick={() => alert("Preview not implemented")} // Replace with actual preview logic
+                onClick={handlePreview}
               >
                 <Eye className="w-4 h-4 mr-2" />
                 Preview Product
@@ -1035,7 +1093,7 @@ const ProductForm: React.FC<ModalProps> = ({ closeModal, product }) => {
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default ProductForm
+export default ProductForm;

@@ -55,7 +55,6 @@ const dispatch=useAppDispatch()
   
   useEffect(() => {
     const token = localStorage.getItem("token");
-    console.log(token,"token")
     if (!token) {
       router.push("/user/login");
     }

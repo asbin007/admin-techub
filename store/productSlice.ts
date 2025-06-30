@@ -55,7 +55,7 @@ export const {
 } = productSlice.actions;
 export default productSlice.reducer;
 
-export function addProduct(data: IProduct) {
+export function createProduct(data: IProduct) {
   return async function addProductThunk(dispatch: AppDispatch) {
     try {
       const res = await APIS.post("/product", data, {

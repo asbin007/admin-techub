@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { fetchProducts } from '@/store/productSlice';
-import ProductTable from './components/productTable';
+import  { ProductTable } from './components/productTable';
 
 export default function Page() {
     const dispatch=useAppDispatch();
@@ -14,7 +14,7 @@ export default function Page() {
 
   return (
     <div>
-        <ProductTable products={products} />
+        <ProductTable  products={products} />
       
     </div>
   )
