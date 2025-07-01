@@ -4,18 +4,10 @@ import { Provider } from "react-redux";
 import store from "@/store/store";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { Toaster } from "react-hot-toast";
-import io from "socket.io-client";
 import { useEffect } from "react";
 import { useAppDispatch } from "@/store/hooks";
 import { loadUserFromStorage } from "@/store/authSlice";
 
-// Create socket globally
-export const socket = io("http://localhost:2000", {
-  auth: {
-    token: typeof window !== "undefined" ? localStorage.getItem("token") : null,
-  },
-  autoConnect: false,
-});
 
 // Split providers and app logic
 function ProvidersWrapper({ children }: { children: React.ReactNode }) {
@@ -25,12 +17,6 @@ function ProvidersWrapper({ children }: { children: React.ReactNode }) {
     dispatch(loadUserFromStorage());
   }, [dispatch]);
 
-  // useEffect(() => {
-  //   socket.connect();
-  //   return () => {
-  //     socket.disconnect();
-  //   };
-  // }, []);
 
   return (
     <ThemeProvider

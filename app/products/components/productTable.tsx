@@ -35,8 +35,8 @@ import { Status } from "@/store/authSlice";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import ProductForm from "./productForm";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"; // Correct import
+import ProductForm from "./productForm";
 
 export function ProductTable({ products }: { products: IProduct[] }) {
   const dispatch = useAppDispatch();
@@ -49,7 +49,7 @@ export function ProductTable({ products }: { products: IProduct[] }) {
   const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to delete this product?")) {
       try {
-        await dispatch(deleteProduct(id)).unwrap();
+        await dispatch(deleteProduct(id))
         router.refresh();
       } catch (error) {
         console.error("Error deleting product:", error);

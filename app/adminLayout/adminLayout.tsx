@@ -44,14 +44,6 @@ export default function AdminLayout({
 const dispatch=useAppDispatch()
   const [isChecking, setIsChecking] = useState(true);
 
-  // useEffect(() => {
-    
-  //   const loggedIn= localStorage.getItem('tokenauth')
-  //   if(!loggedIn){
-  //     router.push('/user/login')
-
-  //   }
-  // }, []);
   
   useEffect(() => {
     const token = localStorage.getItem("token");

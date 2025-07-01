@@ -7,7 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import {
   ArrowLeft,
   Edit,
-  Eye,
+  
   Package,
   Trash2,
   Calendar,
@@ -30,7 +30,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogTrigger,
+
 } from "@/components/ui/dialog";
 import { Status } from "@/store/authSlice";
 import ProductForm from "../components/productForm";
@@ -85,11 +85,6 @@ export default function ProductDetailsPage() {
     }
   };
 
-  const handlePreview = () => {
-    // Placeholder for preview functionality
-    alert("Preview not implemented");
-  };
-
   const closeModal = () => setIsModalOpen(false);
 
   if (!product) return <p>Loading...</p>;
@@ -109,27 +104,23 @@ export default function ProductDetailsPage() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handlePreview}>
-            <Eye className="h-4 w-4 mr-2" />
-            Preview
-          </Button>
-          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-[90vw] w-full md:max-w-7xl p-0 m-0 h-[90vh] overflow-y-auto">
-              <DialogHeader className="px-6 py-4 border-b sticky top-0 bg-background z-10">
-                <DialogTitle>Edit Product</DialogTitle>
-                <DialogDescription>
-                  Modify the product details below and save your changes.
-                </DialogDescription>
-              </DialogHeader>
-              <ProductForm closeModal={closeModal} product={product} />
-            </DialogContent>
-          </Dialog>
+        
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+  <Button variant="outline" size="sm" onClick={() => setIsModalOpen(true)}>
+    <Edit className="h-4 w-4 mr-2" />
+    Edit
+  </Button>
+  <DialogContent className="max-w-[90vw] w-full md:max-w-7xl p-0 m-0 h-[90vh] overflow-y-auto">
+    <DialogHeader className="px-6 py-4 border-b sticky top-0 bg-background z-10">
+      <DialogTitle>Edit Product</DialogTitle>
+      <DialogDescription>
+        Modify the product details below and save your changes.
+      </DialogDescription>
+    </DialogHeader>
+    <ProductForm closeModal={closeModal} product={product} />
+  </DialogContent>
+</Dialog>
+
           <Button variant="destructive" size="sm" onClick={handleDelete}>
             <Trash2 className="h-4 w-4 mr-2" />
             Delete
@@ -229,7 +220,6 @@ export default function ProductDetailsPage() {
                   {product.inStock ? "In Stock" : "Out of Stock"}
                 </Badge>
                 {product.isNew && <Badge variant="secondary">New</Badge>}
-                {product.badge && <Badge variant="outline">{product.badge}</Badge>}
                 {product.discount > 0 && (
                   <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
                     {product.discount}% OFF

@@ -1,8 +1,6 @@
-
 "use client";
 
 import React, { ChangeEvent, FormEvent, useEffect, useState } from "react";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,26 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Plus,
-  X,
-  Save,
-  Eye,
-  Upload,
-  Package,
-  Settings,
-  FileText,
-  ImageIcon,
-  Cpu,
-  HardDrive,
-  Monitor,
-  Palette,
-  Star,
-  AlertCircle,
-  CheckCircle2,
-  DollarSign,
-  BarChart3,
-} from "lucide-react";
+import { Plus, X, Save, Eye, Upload, Package, Settings, FileText, ImageIcon, Cpu, HardDrive, Monitor, Palette, Star, AlertCircle, CheckCircle2, DollarSign, BarChart3 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { createProduct, updateProduct } from "@/store/productSlice";
 import { fetchCategoryItems, resetStatus } from "@/store/categoriesSlice";
@@ -47,20 +26,9 @@ interface ModalProps {
 const ramOptions = ["4GB", "8GB", "16GB", "32GB", "64GB", "128GB"];
 const romOptions = ["128GB SSD", "256GB SSD", "512GB SSD", "1TB SSD", "2TB SSD", "4TB SSD", "1TB HDD", "2TB HDD"];
 const sizeOptions = ["11-inch", "12-inch", "13-inch", "14-inch", "15-inch", "16-inch", "17-inch", "18-inch"];
-const colorOptions = [
-  "Silver",
-  "Space Gray",
-  "Black",
-  "White",
-  "Blue",
-  "Red",
-  "Gold",
-  "Rose Gold",
-  "Midnight",
-  "Starlight",
-];
+const colorOptions = ["Silver", "Space Gray", "Black", "White", "Blue", "Red", "Gold", "Rose Gold", "Midnight", "Starlight"];
 
-const ProductForm: React.FC<ModalProps> = ({ closeModal, product }) => {
+const ProductForm = ({ closeModal, product }: ModalProps) => {
   const dispatch = useAppDispatch();
   const { items: categories } = useAppSelector((store) => store.category);
   const { status } = useAppSelector((store) => store.adminProducts);
@@ -76,7 +44,6 @@ const ProductForm: React.FC<ModalProps> = ({ closeModal, product }) => {
     isNew: product?.isNew ?? false,
     size: product?.size || [],
     color: product?.color || [],
-    badge: product?.badge || "",
     discount: product?.discount || 0,
     RAM: product?.RAM || [],
     ROM: product?.ROM || [],
@@ -95,19 +62,15 @@ const ProductForm: React.FC<ModalProps> = ({ closeModal, product }) => {
   const [newDescription, setNewDescription] = useState("");
   const [newKeyFeature, setNewKeyFeature] = useState("");
 
-  const CLOUDINARY_UPLOAD_PRESET = "your_upload_preset"; // Replace with your Cloudinary upload preset
-  const CLOUDINARY_CLOUD_NAME = "dxpe7jikz";
-  const CLOUDINARY_VERSION = "v1750340657";
-
+  // Form validation
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-
     if (!formData.name?.trim()) newErrors.name = "Product name is required";
-    if (!formData.brand) newErrors.brand = "Brand selection is required";
-    if (!formData.price || formData.price <= 0) newErrors.price = "Valid price is required";
-    if (!formData.categoryId) newErrors.categoryId = "Category selection is required";
-    if (!formData.totalStock || formData.totalStock < 0) newErrors.totalStock = "Valid stock quantity is required";
-    if (!formData.image?.length && !newImages.length) newErrors.image = "At least one product image is required";
+    if (!formData.brand?.trim()) newErrors.brand = "Brand is required";
+    if (!formData.price || formData.price <= 0) newErrors.price = "Price must be greater than 0";
+    if (!formData.categoryId) newErrors.categoryId = "Category is required";
+    if (!formData.totalStock || formData.totalStock < 0) newErrors.totalStock = "Stock quantity cannot be negative";
+    if (!formData.image?.length && !newImages.length) newErrors.image = "At least one image is required";
     if (!formData.RAM?.length) newErrors.RAM = "At least one RAM option is required";
     if (!formData.ROM?.length) newErrors.ROM = "At least one storage option is required";
 
@@ -115,102 +78,72 @@ const ProductForm: React.FC<ModalProps> = ({ closeModal, product }) => {
     return Object.keys(newErrors).length === 0;
   };
 
+  // Handle input changes
   const handleInputChange = (field: keyof IProduct, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
+    setErrors((prev) => ({ ...prev, [field]: "" }));
+  };
+
+  // Add item to array fields
+  const addToArray = (field: keyof IProduct, value: string) => {
+    if (value.trim()) {
+      setFormData((prev) => ({
+        ...prev,
+        [field]: [...((formData[field] as string[]) || []), value.trim()],
+      }));
       setErrors((prev) => ({ ...prev, [field]: "" }));
     }
   };
 
-  const addToArray = (field: keyof IProduct, value: string) => {
-    if (value.trim()) {
-      const currentArray = (formData[field] as string[]) || [];
-      setFormData((prev) => ({
-        ...prev,
-        [field]: [...currentArray, value.trim()],
-      }));
-      if (errors[field]) {
-        setErrors((prev) => ({ ...prev, [field]: "" }));
-      }
-    }
-  };
-
+  // Remove item from array fields
   const removeFromArray = (field: keyof IProduct, index: number) => {
-    const currentArray = (formData[field] as string[]) || [];
     setFormData((prev) => ({
       ...prev,
-      [field]: currentArray.filter((_, i) => i !== index),
+      [field]: ((formData[field] as string[]) || []).filter((_, i) => i !== index),
     }));
   };
 
+  // Toggle array items (for RAM, ROM, size, color)
   const toggleArrayItem = (field: keyof IProduct, value: string) => {
     const currentArray = (formData[field] as string[]) || [];
-    if (currentArray.includes(value)) {
-      setFormData((prev) => ({
-        ...prev,
-        [field]: currentArray.filter((item) => item !== value),
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        [field]: [...currentArray, value],
-      }));
-    }
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: "" }));
-    }
+    setFormData((prev) => ({
+      ...prev,
+      [field]: currentArray.includes(value)
+        ? currentArray.filter((item) => item !== value)
+        : [...currentArray, value],
+    }));
+    setErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
+  // Handle image selection
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
-      const newFiles = Array.from(files);
-      setNewImages((prev) => [...prev, ...newFiles]);
-
-      const newPreviews = newFiles.map((file) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        return new Promise<string>((resolve) => {
-          reader.onloadend = () => resolve(reader.result as string);
-        });
+      const validFiles = Array.from(files).filter((file) => {
+        if (!file.type.startsWith("image/")) {
+          setErrors((prev) => ({ ...prev, image: "Only image files are allowed" }));
+          return false;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+          setErrors((prev) => ({ ...prev, image: "Image size must be less than 5MB" }));
+          return false;
+        }
+        return true;
       });
 
-      Promise.all(newPreviews).then((previews) => {
-        setImagePreviews((prev) => [...prev, ...previews]);
-      });
+      setNewImages((prev) => [...prev, ...validFiles]);
+      const previews = validFiles.map((file) => URL.createObjectURL(file));
+      setImagePreviews((prev) => [...prev, ...previews]);
     }
   };
 
+  // Remove new image
   const removeNewImage = (index: number) => {
     setNewImages((prev) => prev.filter((_, i) => i !== index));
     setImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const uploadImageToCloudinary = async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-
-    try {
-      const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || "Failed to upload image");
-      }
-      const data = await response.json();
-      return `/uploads/${data.public_id}`;
-    } catch (error) {
-      console.error("Error uploading image to Cloudinary:", error);
-      throw error;
-    }
-  };
-
+  // Calculate discount
   const calculateDiscount = () => {
     if (formData.originalPrice && formData.price && formData.originalPrice > formData.price) {
       return Math.round(((formData.originalPrice - formData.price) / formData.originalPrice) * 100);
@@ -218,102 +151,54 @@ const ProductForm: React.FC<ModalProps> = ({ closeModal, product }) => {
     return 0;
   };
 
+  // Handle form submission
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setIsSubmitting(true);
+    setErrors({});
 
     try {
-      let imageUrls = formData.image || [];
-      if (newImages.length > 0) {
-        const uploadedImages = await Promise.all(
-          newImages.map((file) => uploadImageToCloudinary(file))
-        );
-        imageUrls = [...imageUrls, ...uploadedImages];
-      }
-
-      const productData = {
-        ...formData,
-        id: formData.id || `product_${Date.now()}`,
-        name: formData.name ?? "",
-        brand: formData.brand ?? "",
-        price: formData.price ?? 0,
-        originalPrice: formData.originalPrice ?? 0,
-        image: imageUrls,
-        inStock: formData.inStock ?? true,
-        isNew: formData.isNew ?? false,
-        size: formData.size ?? [],
-        color: formData.color ?? [],
-        badge: formData.badge ?? "",
-        discount: calculateDiscount(),
-        RAM: formData.RAM ?? [],
-        ROM: formData.ROM ?? [],
-        spec: formData.spec ?? [],
-        categoryId: formData.categoryId ?? "",
-        description: formData.description ?? [],
-        keyFeatures: formData.keyFeatures ?? [],
-        totalStock: formData.totalStock ?? 0,
-        createdAt: formData.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        Category: {
-          id: formData.categoryId || "",
-          categoryName: categories.find((cat) => cat.id === formData.categoryId)?.categoryName || "",
-        },
-      };
-
-      if (product) {
-        await dispatch(updateProduct(productData))
-      } else {
-        await dispatch(createProduct(productData))
-      }
-
-      // Reset form after successful submission
-      setFormData({
-        id: `product_${Date.now()}`,
-        name: "",
-        brand: "",
-        price: 0,
-        originalPrice: 0,
-        image: [],
-        inStock: true,
-        isNew: false,
-        size: [],
-        color: [],
-        badge: "",
-        discount: 0,
-        RAM: [],
-        ROM: [],
-        spec: [],
-        categoryId: "",
-        description: [],
-        keyFeatures: [],
-        totalStock: 0,
+      const formDataToSend = new FormData();
+      Object.entries(formData).forEach(([key, value]) => {
+        if (key === "image") return; // Skip existing images, handled separately
+        formDataToSend.append(key, Array.isArray(value) ? JSON.stringify(value) : String(value));
       });
-      setNewImages([]);
-      setImagePreviews([]);
-      setNewSpec("");
-      setNewDescription("");
-      setNewKeyFeature("");
-    } catch (error) {
-      console.error("Error saving product:", error);
-      setErrors((prev) => ({ ...prev, submit: "Failed to save product. Please try again." }));
-    } finally {
+
+      // Append new images to FormData
+      newImages.forEach((image, index) => {
+        formDataToSend.append(`images[${index}]`, image);
+      });
+
+      // Dispatch create or update action
+      if (product) {
+        await dispatch(updateProduct({ id: product.id, data: formDataToSend })).unwrap();
+      } else {
+        const productData: IProduct = {
+          ...formData,
+          image: [], // Backend will handle image URLs
+          discount: calculateDiscount(),
+        } as IProduct;
+        await dispatch(createProduct(productData)).unwrap();
+      }
+
       setIsSubmitting(false);
+      closeModal();
+    } catch (error) {
+      setIsSubmitting(false);
+      setErrors({ submit: "Failed to save product. Please try again." });
     }
   };
 
-  const handlePreview = () => {
-    localStorage.setItem("productPreview", JSON.stringify(formData));
-    window.open("/preview/product", "_blank");
-  };
+  
 
+  // Fetch categories and handle status
   useEffect(() => {
-    dispatch(fetchCategoryItems());
-  }, [dispatch]);
+    if (!categories.length) {
+      dispatch(fetchCategoryItems());
+    }
+  }, [dispatch, categories.length]);
 
   useEffect(() => {
     if (status === Status.SUCCESS) {
@@ -342,14 +227,6 @@ const ProductForm: React.FC<ModalProps> = ({ closeModal, product }) => {
             </div>
           </div>
           <div className="flex items-center space-x-3 w-full sm:w-auto">
-            <Button
-              variant="outline"
-              className="h-10 bg-transparent flex-1 sm:flex-none border-gray-300 hover:bg-gray-100"
-              onClick={handlePreview}
-            >
-              <Eye className="w-4 h-4 mr-2" />
-              Preview
-            </Button>
             <Button
               onClick={handleSubmit}
               disabled={isSubmitting}
@@ -380,7 +257,6 @@ const ProductForm: React.FC<ModalProps> = ({ closeModal, product }) => {
 
       {/* Form Content */}
       <div className="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Form */}
         <div className="lg:col-span-2 space-y-6">
           <Tabs defaultValue="basic" className="w-full">
             <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full bg-gray-50 border rounded-lg">
@@ -402,7 +278,6 @@ const ProductForm: React.FC<ModalProps> = ({ closeModal, product }) => {
               </TabsTrigger>
             </TabsList>
 
-            {/* Basic Information Tab */}
             <TabsContent value="basic" className="space-y-6">
               <Card className="border-gray-200 shadow-sm">
                 <CardHeader>
@@ -536,7 +411,7 @@ const ProductForm: React.FC<ModalProps> = ({ closeModal, product }) => {
                       <Select
                         value={formData.categoryId}
                         onValueChange={(value) => handleInputChange("categoryId", value)}
-                        onOpenChange={(open) => open && dispatch(fetchCategoryItems())}
+                        onOpenChange={(open) => open && !categories.length && dispatch(fetchCategoryItems())}
                       >
                         <SelectTrigger className={`h-10 ${errors.categoryId ? "border-red-500" : "border-gray-300"}`}>
                           <SelectValue placeholder="Select category" />
@@ -557,19 +432,7 @@ const ProductForm: React.FC<ModalProps> = ({ closeModal, product }) => {
                       )}
                     </div>
 
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="badge" className="text-sm font-medium text-gray-700">
-                      Product Badge
-                    </Label>
-                    <Input
-                      id="badge"
-                      value={formData.badge}
-                      onChange={(e) => handleInputChange("badge", e.target.value)}
-                      placeholder="e.g., Best Seller, New Arrival, Limited Edition"
-                      className="h-10 border-gray-300"
-                    />
+                 
                   </div>
 
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-gray-50 rounded-lg gap-4">
@@ -597,19 +460,18 @@ const ProductForm: React.FC<ModalProps> = ({ closeModal, product }) => {
                     </div>
                     <div className="flex items-center space-x-2 text-sm text-gray-600">
                       <CheckCircle2 className="w-4 h-4 text-green-500" />
-                      Product will be {formData.inStock ? "available" : "unavailable"} for purchase
+                      Product will be {formData.inStock ? "available" : "unavailable"}
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
 
-            {/* Media Tab */}
             <TabsContent value="media" className="space-y-6">
               <div className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center">
                 <Upload className="w-10 h-10 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-base font-medium text-gray-900 mb-2">Upload Product Images</h3>
-                <p className="text-sm text-gray-500 mb-4">Select multiple image files to upload to Cloudinary</p>
+                <p className="text-sm text-gray-500 mb-4">Select multiple image files (max 5MB each)</p>
                 <input
                   type="file"
                   accept="image/*"
@@ -661,9 +523,7 @@ const ProductForm: React.FC<ModalProps> = ({ closeModal, product }) => {
                             </div>
                             <div>
                               <p className="font-medium text-sm">Image {index + 1}</p>
-                              <p className="text-xs text-gray-500 truncate max-w-[150px]">
-                                {img.startsWith("/uploads") ? `Cloudinary: ${img}` : img}
-                              </p>
+                              <p className="text-xs text-gray-500 truncate max-w-[150px]">{img}</p>
                             </div>
                           </div>
                           <button
@@ -681,7 +541,6 @@ const ProductForm: React.FC<ModalProps> = ({ closeModal, product }) => {
               )}
             </TabsContent>
 
-            {/* Specifications Tab */}
             <TabsContent value="specs" className="space-y-6">
               <div className="grid grid-cols-1 gap-6">
                 <Card className="border-gray-200 shadow-sm">
@@ -906,9 +765,9 @@ const ProductForm: React.FC<ModalProps> = ({ closeModal, product }) => {
                               size="sm"
                               onClick={() => removeFromArray("description", index)}
                               className="text-gray-400 hover:text-red-500"
-                              >
+                            >
                               <X className="w-4 h-4" />
-                            </Button>
+                              </Button>
                           </div>
                         ))}
                       </div>
@@ -1071,14 +930,7 @@ const ProductForm: React.FC<ModalProps> = ({ closeModal, product }) => {
                   </>
                 )}
               </Button>
-              <Button
-                variant="outline"
-                className="w-full h-10 border-gray-300 hover:bg-gray-100"
-                onClick={handlePreview}
-              >
-                <Eye className="w-4 h-4 mr-2" />
-                Preview Product
-              </Button>
+          
             </CardContent>
           </Card>
         </div>

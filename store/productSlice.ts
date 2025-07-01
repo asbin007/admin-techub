@@ -58,20 +58,20 @@ export default productSlice.reducer;
 export function createProduct(data: IProduct) {
   return async function addProductThunk(dispatch: AppDispatch) {
     try {
+     
       const res = await APIS.post("/product", data, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        headers: { "Content-Type": "multipart/form-data" },
       });
       if (res.status === 200) {
         dispatch(setStatus(Status.SUCCESS));
         dispatch(addProductToProducts(res.data.data));
       } else {
         dispatch(setStatus(Status.ERROR));
+        throw new Error("Failed to create product");
       }
     } catch (error) {
       dispatch(setStatus(Status.ERROR));
-      console.log(error);
+      console.error("Error creating product:", error);
     }
   };
 }
