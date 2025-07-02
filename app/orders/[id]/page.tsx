@@ -1,16 +1,16 @@
 "use client";
 import AdminLayout from "@/app/adminLayout/adminLayout";
-import { socket } from "@/app/app";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { fetchAdminOrderDetails, OrderStatus } from "@/store/orderSlice";
 import { useParams } from "next/navigation";
 
-import { ChangeEvent, useEffect } from "react";
+import {  useEffect } from "react";
 
 function AdminOrderDetail() {
   const dispatch = useAppDispatch();
   const { id } = useParams();
   const { orderDetails } = useAppSelector((store) => store.orders);
+  const CLOUDINARY_VERSION = "v1750340657";
 
   useEffect(() => {
     if (id) {
@@ -18,24 +18,7 @@ function AdminOrderDetail() {
     }
   }, []);
 
-  const handleOrderStatusChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    if (id) {
-      socket.emit("updateOrderStatus", {
-        status: e.target.value,
-        orderId: id,
-        userId: orderDetails[0].Order.userId,
-      });
-    }
-  };
- const handlePaymentStatusChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    if (id) {
-      socket.emit("updatePaymentStatus", {
-        status: e.target.value,
-        orderId: id,
-        paymentId: orderDetails[0]?.paymentId,
-      });
-    }
-  };
+  
   return (
     <AdminLayout>
       <div className="py-14 px-4 md:px-6 2xl:px-20 2xl:container 2xl:mx-auto">
@@ -46,7 +29,7 @@ function AdminOrderDetail() {
           <p className="text-base dark:text-gray-300 font-medium leading-6 text-gray-600">
             {new Date(orderDetails[0]?.createdAt).toLocaleDateString()}
           </p>
-          <p>Order Status : {orderDetails[0]?.Order?.status}</p>
+          <p>Order Status : {orderDetails[0]?.Order?.orderStatus}</p>
         </div>
         <div className="mt-10 flex flex-col xl:flex-row jusitfy-center items-stretch w-full xl:space-x-8 space-y-4 md:space-y-6 xl:space-y-0">
           <div className="flex flex-col justify-start items-start w-full space-y-4 md:space-y-6 xl:space-y-8">
@@ -56,6 +39,13 @@ function AdminOrderDetail() {
               </p>
               {orderDetails.length > 0 &&
                 orderDetails.map((od) => {
+                   const imageUrl =
+                    od.Product.image && od.Product.image[0]
+                      ? `https://res.cloudinary.com/dxpe7jikz/image/upload/${CLOUDINARY_VERSION}${od.Product.image[0].replace(
+                          "/uploads",
+                          ""
+                        )}.jpg`
+                      : "https://via.placeholder.com/300x300?text=No+Image";
                   return (
                     <div
                       key={od.id}
@@ -64,33 +54,33 @@ function AdminOrderDetail() {
                       <div className="pb-4 md:pb-8 w-full md:w-40">
                         <img
                           className="w-full hidden md:block"
-                          src={`http://localhost:5001/${od?.Shoe?.images}`}
+                          src={imageUrl}
                           alt="dress"
                         />
                       </div>
                       <div className="border-b border-gray-200 md:flex-row flex-col flex justify-between items-start w-full pb-8 space-y-4 md:space-y-0">
                         <div className="w-full flex flex-col justify-start items-start space-y-8">
                           <h3 className="text-xl dark:text-white xl:text-2xl font-semibold leading-6 text-gray-800">
-                            {od?.Shoe?.name}
+                            {od?.Product?.name}
                           </h3>
                           <div className="flex justify-start items-start flex-col space-y-2">
                             <p className="text-sm dark:text-white leading-none text-gray-800">
                               <span className="dark:text-gray-400 text-gray-300">
                                 Category:{" "}
                               </span>{" "}
-                              {od?.Shoe?.Category?.categoryName}
+                              {od?.Product?.Category?.categoryName}
                             </p>
                           </div>
                         </div>
                         <div className="flex justify-between space-x-8 items-start w-full">
                           <p className="text-base dark:text-white xl:text-lg leading-6">
-                            Rs.{od.Shoe.price}{" "}
+                            Rs.{od.Product.price}{" "}
                           </p>
                           <p className="text-base dark:text-white xl:text-lg leading-6 text-gray-800">
                             {od.quantity}
                           </p>
                           <p className="text-base dark:text-white xl:text-lg font-semibold leading-6 text-gray-800">
-                            Rs.{od.quantity * od.Shoe.price}
+                            Rs.{od.quantity * od.Product.price}
                           </p>
                         </div>
                       </div>
@@ -177,16 +167,16 @@ function AdminOrderDetail() {
                   </div>
                 </div>
                 <label htmlFor="">Change Payment status</label>
-                <select name="" id="" onChange={handlePaymentStatusChange}>
+                <select name="" id="">
                   <option value="paid">paid</option>
                   <option value="unpaid">unpaid</option>
                 </select>
                 <div className="flex w-full justify-center items-center md:justify-start md:items-start">
-                  {orderDetails[0]?.Order?.status !==
+                  {orderDetails[0]?.Order?.orderStatus !==
                     OrderStatus?.Cancelled && (
                     <>
                       <label htmlFor="">Change Order status</label>
-                      <select onChange={handleOrderStatusChange} name="" id="">
+                      <select  name="" id="">
                         <option value="pending">pending</option>
                         <option value="delivered">delivered</option>
                         <option value="ontheway">ontheway</option>

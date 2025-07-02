@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { useAppDispatch } from "@/store/hooks";
 import { ChangeEvent, FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { loginUser } from "@/store/authSlice";
@@ -22,7 +22,6 @@ export const description =
 export default function LoginForm() {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { user } = useAppSelector((store) => store.auth);
   const [data, setData] = useState({
     email: "",
     password: "",
@@ -36,14 +35,18 @@ export default function LoginForm() {
     });
   };
 
-  const handleSubmit = async(e: FormEvent<HTMLFormElement>) => {
-    const token= localStorage.getItem('token')
-    e.preventDefault();
-    await dispatch(loginUser(data));
-    if (token && user) {
-      router.push("/");
-    }
-  };
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+
+  const result = await dispatch(loginUser(data));
+
+  if (result?.success) {
+    router.push("/");
+  } else {
+    console.error("Login failed");
+  }
+};
+
 
   return (
     <Card className="mx-auto max-w-sm">

@@ -2,6 +2,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { AppDispatch } from "./store";
 import { API, APIS } from "../globals/http";
 
+
 export interface IUser {
   id: string | null;
   username: string | null;
@@ -21,79 +22,82 @@ interface IInitialState {
   user: IUser[];
   status: Status;
 }
+
 const initialState: IInitialState = {
   user: [],
-
   status: Status.LOADING,
 };
+
+// --------------------- Slice ---------------------
 
 const userSlice = createSlice({
   name: "users",
   initialState,
   reducers: {
-    setStatus(state: IInitialState, action: PayloadAction<Status>) {
+    setStatus(state, action: PayloadAction<Status>) {
       state.status = action.payload;
     },
-    setUsers(state: IInitialState, action: PayloadAction<IUser[]>) {
+    setUsers(state, action: PayloadAction<IUser[]>) {
       state.user = action.payload;
     },
-    deleteUser(state: IInitialState, action: PayloadAction<string>) {
-      const index = state.user.findIndex(
-        (users) => users.id === action.payload
-      );
+    deleteUser(state, action: PayloadAction<string>) {
+      const index = state.user.findIndex((u) => u.id === action.payload);
       if (index !== -1) {
         state.user.splice(index, 1);
       }
     },
-    setToken(
-      state: IInitialState,
-      action: PayloadAction<{ id: string; token: string }>
-    ) {
+    setToken(state, action: PayloadAction<{ id: string; token: string }>) {
       const user = state.user.find((u) => u.id === action.payload.id);
       if (user) {
         user.token = action.payload.token;
       }
     },
-    logout(state: IInitialState) {
+    logout(state) {
       state.user = [];
       state.status = Status.LOADING;
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
+      // Clear auth token from cookies
+      document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     },
   },
 });
 
-export const { setStatus, setUsers, deleteUser, logout, setToken } =
-  userSlice.actions;
+export const { setStatus, setUsers, deleteUser, logout, setToken } = userSlice.actions;
 export default userSlice.reducer;
 
+// --------------------- Thunks ---------------------
+
+// Login User
 export function loginUser(data: { email: string; password: string }) {
   return async function loginUserThunk(dispatch: AppDispatch) {
     try {
       const response = await API.post("/auth/logins", data);
+
       if (response.status === 200) {
-        const { id, username, email } = response.data;
-        dispatch(setStatus(Status.SUCCESS));
-        console.log("res", response.data);
-        const token =
-          response.data.token || response.data.session?.access_token;
+        const { id, username, email, token } = response.data;
 
         if (token) {
-          localStorage.setItem("token", token);
-          dispatch(setUsers([{ id, username, email, password: null, token, role: null }]));
-        } else {
-          dispatch(setStatus(Status.ERROR));
+          // ✅ Store token in cookie so middleware can read it
+          document.cookie = `token=${token}; path=/;`;
+
+          dispatch(setUsers([
+            { id, username, email, password: null, token, role: null },
+          ]));
+          dispatch(setStatus(Status.SUCCESS));
+          return { success: true };
         }
-      } else {
-        dispatch(setStatus(Status.ERROR));
       }
-    } catch (error) {
-      console.log(error);
+
       dispatch(setStatus(Status.ERROR));
+      return { success: false };
+    } catch (error) {
+      console.log("Login error:", error);
+      dispatch(setStatus(Status.ERROR));
+      return { success: false };
     }
   };
 }
 
+// Fetch All Users (Admin Panel)
 export function fetchUsers() {
   return async function fetchUsersThunk(dispatch: AppDispatch) {
     try {
@@ -112,10 +116,11 @@ export function fetchUsers() {
   };
 }
 
+// Delete a User
 export function deleteUserById(id: string) {
   return async function deleteUserByIdThunk(dispatch: AppDispatch) {
     try {
-      const response = await APIS.delete("/auth/users/" + id);
+      const response = await APIS.delete(`/auth/users/${id}`);
       if (response.status === 200) {
         dispatch(setStatus(Status.SUCCESS));
         dispatch(deleteUser(id));
@@ -129,20 +134,24 @@ export function deleteUserById(id: string) {
   };
 }
 
-export function loadUserFromStorage() {
-  return function loadUserThunk(dispatch: AppDispatch) {
-    const token = localStorage.getItem("token");
-    const user = localStorage.getItem("user");
+// Get current logged-in user (optional replacement for loadUserFromStorage)
+export function getCurrentUser() {
+  return async function getCurrentUserThunk(dispatch: AppDispatch) {
+    try {
+      const response = await APIS.get("/auth/me"); // Should read from cookie
 
-    if (token && user) {
-      try {
-        const parsedUser = JSON.parse(user);
-        dispatch(setUsers([{ ...parsedUser, token }]));
+      if (response.status === 200) {
+        const { id, username, email, token, role } = response.data;
+        dispatch(setUsers([
+          { id, username, email, password: null, token, role },
+        ]));
         dispatch(setStatus(Status.SUCCESS));
-      } catch {
-        console.error("Failed to parse user from storage");
+      } else {
         dispatch(setStatus(Status.ERROR));
       }
+    } catch (error) {
+      console.log("Get current user failed:", error);
+      dispatch(setStatus(Status.ERROR));
     }
   };
 }

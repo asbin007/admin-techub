@@ -14,13 +14,7 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -45,16 +39,16 @@ const dispatch=useAppDispatch()
   const [isChecking, setIsChecking] = useState(true);
 
   
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      router.push("/user/login");
-    }
-    else{
-      setIsChecking(false)
-    }
-    
-  }, [router]);
+ useEffect(() => {
+  const tokenInLocalStorage = localStorage.getItem("token");
+  const tokenInCookie = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+  if (!tokenInLocalStorage && !tokenInCookie) {
+    router.push("/user/login");
+  } else {
+    setIsChecking(false);
+  }
+}, [router]);
+
 
   const handleLogout = () => {
     dispatch(logout());
@@ -200,22 +194,7 @@ const dispatch=useAppDispatch()
                   Analytics
                 </Link>
               </nav>
-              <div className="mt-auto">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Upgrade to Pro</CardTitle>
-                    <CardDescription>
-                      Unlock all features and get unlimited access to our
-                      support team.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button size="sm" className="w-full">
-                      Upgrade
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
+            
             </SheetContent>
           </Sheet>
           <div className="w-full flex-1">

@@ -3,6 +3,7 @@ import { AppDispatch, RootState } from "./store";
 import { API, APIS } from "../globals/http";
 import { Status } from "./authSlice";
 import { IProduct } from "@/app/products/types";
+import { request } from "http";
 
 interface IProducts {
   products: IProduct[];
@@ -65,6 +66,8 @@ export function createProduct(data: IProduct) {
       if (res.status === 200) {
         dispatch(setStatus(Status.SUCCESS));
         dispatch(addProductToProducts(res.data.data));
+        
+
       } else {
         dispatch(setStatus(Status.ERROR));
         throw new Error("Failed to create product");
@@ -126,11 +129,13 @@ export function fetchProductAdmin(id: string) {
 export function deleteProduct(id: string) {
   return async function deleteProductThunk(dispatch: AppDispatch) {
     try {
+      const token = localStorage.getItem("token");
+      console.log(" token from localStorage:", token);
+
       const res = await APIS.delete(`/product/${id}`);
-      if (res.status === 201) {
-        // Backend uses 201, ideally should be 204
+      if (res.status === 200) {
         dispatch(removeProduct(id));
-        return res.data;
+        dispatch(setStatus(Status.SUCCESS));
       } else {
         dispatch(setStatus(Status.ERROR));
         throw new Error(res.data.message || "Failed to delete product");
@@ -143,6 +148,7 @@ export function deleteProduct(id: string) {
     }
   };
 }
+
 
 export function updateProducts(id: string, data: FormData) {
   return async function updateProductsThunk(dispatch: AppDispatch) {

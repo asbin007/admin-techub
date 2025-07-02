@@ -3,6 +3,7 @@ import { Status } from "./authSlice";
 import { APIS } from "@/globals/http";
 import { AppDispatch } from "./store";
 
+// Enums for statuses
 export enum OrderStatus {
   Preparation = "preparation",
   Ontheway = "ontheway",
@@ -21,14 +22,15 @@ export enum PaymentStatus {
   Paid = "paid",
   Unpaid = "unpaid",
 }
+
+// Single order item in OrderDetails
 export interface IOrderDetail {
   id: string;
   quantity: number;
   createdAt: string;
   orderId: string;
   productId: string;
-  paymentId:string
-
+  paymentId: string;
   Order: {
     firstName: string;
     lastName: string;
@@ -37,91 +39,98 @@ export interface IOrderDetail {
     city: string;
     street: string;
     zipcode: string;
-    status: OrderStatus;
+    orderStatus: OrderStatus;
     totalPrice: number;
     state: string;
     userId: string;
-
     Payment: {
       paymentMethod: PaymentMethod;
       paymentStatus: PaymentStatus;
     };
   };
-
-  Shoe: {
-    images: string;
+  Product: {
+    image: string[];
     name: string;
     price: number;
     Category: {
+      id: string;
       categoryName: string;
     };
   };
 }
 
-interface IOrder {
+// Basic summary of each order in list
+export interface IOrderSummary {
   id: string;
   totalPrice: number;
-  status: string;
-  OrderDetail: {
-    quantity: string;
-    createdAt:string
-  };
+  orderStatus: OrderStatus;
+  createdAt: string;
   Payment: {
-    
-    paymentMethod: string;
-    paymentStatus: string;
+    id: string;
+    paymentMethod: PaymentMethod;
+    paymentStatus: PaymentStatus;
   };
+  OrderDetails: {
+    quantity: number;
+  }[];
 }
-interface IIOrder {
-  items: IOrder[];
-  status: Status;
+
+// Slice state
+interface IOrderState {
+  items: IOrderSummary[];
   orderDetails: IOrderDetail[];
+  status: Status;
 }
-const initialState: IIOrder = {
+
+// Initial state
+const initialState: IOrderState = {
   items: [],
-  status: Status.LOADING,
   orderDetails: [],
+  status: Status.LOADING,
 };
+
+// Slice
 const orderSlice = createSlice({
   name: "orders",
   initialState,
   reducers: {
-    setItems(state: IIOrder, action: PayloadAction<IOrder[]>) {
+    setItems(state, action: PayloadAction<IOrderSummary[]>) {
       state.items = action.payload;
     },
-    setOrderDetails(state: IIOrder, action: PayloadAction<IOrderDetail[]>) {
+    setOrderDetails(state, action: PayloadAction<IOrderDetail[]>) {
       state.orderDetails = action.payload;
     },
-    setStatus(state: IIOrder, action: PayloadAction<Status>) {
+    setStatus(state, action: PayloadAction<Status>) {
       state.status = action.payload;
     },
-    
-  }
+  },
 });
+
 export default orderSlice.reducer;
-const { setItems, setStatus, setOrderDetails } = orderSlice.actions;
+export const { setItems, setStatus, setOrderDetails } = orderSlice.actions;
 
 export function fetchOrders() {
   return async function fetchOrdersThunk(dispatch: AppDispatch) {
     try {
       const response = await APIS.get("/order/all");
-      if (response.status === 201) {
+      if (response.status === 200) {
         dispatch(setStatus(Status.SUCCESS));
         dispatch(setItems(response.data.data));
       } else {
         dispatch(setStatus(Status.ERROR));
       }
     } catch (error) {
-      console.log(error);
+      console.error("Error fetching orders:", error);
       dispatch(setStatus(Status.ERROR));
     }
   };
 }
 
+// Fetch full details of a specific order
 export function fetchAdminOrderDetails(id: string) {
   return async function fetchAdminOrderDetailsThunk(dispatch: AppDispatch) {
     try {
-      const response = await APIS.get("/order/" + id);
+      const response = await APIS.get(`/order/${id}`);
       if (response.status === 200) {
         dispatch(setStatus(Status.SUCCESS));
         dispatch(setOrderDetails(response.data.data));
@@ -129,7 +138,7 @@ export function fetchAdminOrderDetails(id: string) {
         dispatch(setStatus(Status.ERROR));
       }
     } catch (error) {
-      console.log(error);
+      console.error("Error fetching order details:", error);
       dispatch(setStatus(Status.ERROR));
     }
   };
