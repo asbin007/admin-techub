@@ -1,192 +1,272 @@
 "use client";
-import AdminLayout from "@/app/adminLayout/adminLayout";
-import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { fetchAdminOrderDetails, OrderStatus } from "@/store/orderSlice";
-import { useParams } from "next/navigation";
 
-import {  useEffect } from "react";
+import AdminLayout from "@/app/adminLayout/adminLayout";
+import { socket } from "@/app/app";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { fetchAdminOrderDetails } from "@/store/orderSlice";
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
+
+// Simple function to delay fetching (like pressing a button slowly)
+function delayFetch(func, wait) {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer); // Cancel any previous timer
+    timer = setTimeout(() => func(...args), wait); // Wait before running
+  };
+}
 
 function AdminOrderDetail() {
-  const dispatch = useAppDispatch();
-  const { id } = useParams();
-  const { orderDetails } = useAppSelector((store) => store.orders);
-  const CLOUDINARY_VERSION = "v1750340657";
+  const dispatch = useAppDispatch(); // For sending actions to Redux
+  const { id } = useParams(); // Get order ID from the URL
+  const { orderDetails } = useAppSelector((store) => store.orders); // Get order data from Redux
+  const [orderStatus, setOrderStatus] = useState(""); // Local state for order status
+  const [paymentStatus, setPaymentStatus] = useState(""); // Local state for payment status
+  const [isMyUpdate, setIsMyUpdate] = useState(false); // Track if I made the update
+  const CLOUDINARY_VERSION = "v1750340657"; // For image URLs
 
+  // Slow down fetching to once every second
+  const slowFetchOrder = delayFetch((orderId) => {
+    console.log("Fetching order details for ID:", orderId);
+    dispatch(fetchAdminOrderDetails(orderId));
+  }, 1000);
+
+  // Update dropdowns when order data changes
+  useEffect(() => {
+    if (orderDetails[0]?.Order) {
+      const newOrderStatus = orderDetails[0].Order.orderStatus || "pending";
+      const newPaymentStatus = orderDetails[0].Order.Payment?.paymentStatus || "unpaid";
+      // Only update if different to avoid extra re-renders
+      if (newOrderStatus !== orderStatus) setOrderStatus(newOrderStatus);
+      if (newPaymentStatus !== paymentStatus) setPaymentStatus(newPaymentStatus);
+    }
+  }, [orderDetails, orderStatus, paymentStatus]);
+
+  // Fetch order details when the page loads
   useEffect(() => {
     if (id) {
+      console.log("Loading order details for ID:", id);
       dispatch(fetchAdminOrderDetails(id));
     }
-  }, []);
+  }, [id, dispatch]);
 
-  
+  // Listen for server updates
+  useEffect(() => {
+    // When the server says the order status changed
+    socket.on("orderStatusUpdated", (data) => {
+      console.log("Server sent order status update:", data);
+      // Only fetch if it’s for this order and not my own update
+      if (data.orderId === id && !isMyUpdate) {
+        slowFetchOrder(id);
+      }
+    });
+
+    // When the server says the payment status changed
+    socket.on("paymentStatusUpdated", (data) => {
+      console.log("Server sent payment status update:", data);
+      // Only fetch if it’s for this order and not my own update
+      if (data.orderId === id && !isMyUpdate) {
+        slowFetchOrder(id);
+      }
+    });
+
+    // Clean up listeners when the page closes
+    return () => {
+      socket.off("orderStatusUpdated");
+      socket.off("paymentStatusUpdated");
+    };
+  }, [id, dispatch, isMyUpdate]);
+
+  // When I change the order status dropdown
+  const handleOrderStatusChange = (event) => {
+    const newStatus = event.target.value;
+    setOrderStatus(newStatus); // Update dropdown immediately
+    setIsMyUpdate(true); // Mark as my update
+    if (id && orderDetails.length > 0) {
+      console.log("Sending new order status to server:", {
+        status: newStatus,
+        orderId: id,
+      });
+      socket.emit("updateOrderStatus", {
+        status: newStatus,
+        orderId: id,
+        userId: orderDetails[0].Order.userId,
+      });
+      // Allow server updates again after 1 second
+      setTimeout(() => setIsMyUpdate(false), 1000);
+    }
+  };
+
+  // When I change the payment status dropdown
+  const handlePaymentStatusChange = (event) => {
+    const newStatus = event.target.value;
+    setPaymentStatus(newStatus); // Update dropdown immediately
+    setIsMyUpdate(true); // Mark as my update
+    if (id && orderDetails.length > 0) {
+      console.log("Sending new payment status to server:", {
+        paymentStatus: newStatus,
+        orderId: id,
+      });
+      socket.emit("updatePaymentStatus", {
+        paymentStatus: newStatus,
+        paymentId: orderDetails[0]?.Order?.Payment?.id,
+        orderId: id,
+        userId: orderDetails[0]?.Order?.userId,
+      });
+      // Allow server updates again after 1 second
+      setTimeout(() => setIsMyUpdate(false), 1000);
+    }
+  };
+
+  // Show loading screen if no order data yet
+  if (!orderDetails[0]?.Order) {
+    return <AdminLayout>Loading...</AdminLayout>;
+  }
+
   return (
     <AdminLayout>
-      <div className="py-14 px-4 md:px-6 2xl:px-20 2xl:container 2xl:mx-auto">
-        <div className="flex justify-start item-start space-y-2 flex-col">
-          <h1 className="text-3xl dark:text-white lg:text-4xl font-semibold leading-7 lg:leading-9 text-gray-800">
+      <div className="py-10 px-4 md:px-6 2xl:px-20 2xl:container 2xl:mx-auto">
+        <div className="space-y-2">
+          <h1 className="text-2xl md:text-3xl font-semibold text-gray-800 dark:text-white">
             Order #{orderDetails[0]?.orderId}
           </h1>
-          <p className="text-base dark:text-gray-300 font-medium leading-6 text-gray-600">
+          <p className="text-sm md:text-base text-gray-600 dark:text-gray-300">
             {new Date(orderDetails[0]?.createdAt).toLocaleDateString()}
           </p>
-          <p>Order Status : {orderDetails[0]?.Order?.orderStatus}</p>
+          <p className="text-sm text-gray-600 dark:text-gray-300">
+            Order Status: <span className="font-medium">{orderStatus}</span>
+          </p>
         </div>
-        <div className="mt-10 flex flex-col xl:flex-row jusitfy-center items-stretch w-full xl:space-x-8 space-y-4 md:space-y-6 xl:space-y-0">
-          <div className="flex flex-col justify-start items-start w-full space-y-4 md:space-y-6 xl:space-y-8">
-            <div className="flex flex-col justify-start items-start dark:bg-gray-800 bg-gray-50 px-4 py-4 md:py-6 md:p-6 xl:p-8 w-full">
-              <p className="text-lg md:text-xl dark:text-white font-semibold leading-6 xl:leading-5 text-gray-800">
-                Customer’s Cart
-              </p>
-              {orderDetails.length > 0 &&
-                orderDetails.map((od) => {
-                   const imageUrl =
-                    od.Product.image && od.Product.image[0]
-                      ? `https://res.cloudinary.com/dxpe7jikz/image/upload/${CLOUDINARY_VERSION}${od.Product.image[0].replace(
-                          "/uploads",
-                          ""
-                        )}.jpg`
-                      : "https://via.placeholder.com/300x300?text=No+Image";
-                  return (
-                    <div
-                      key={od.id}
-                      className="mt-4 md:mt-6 flex flex-col md:flex-row justify-start items-start md:items-center md:space-x-6 xl:space-x-8 w-full"
-                    >
-                      <div className="pb-4 md:pb-8 w-full md:w-40">
-                        <img
-                          className="w-full hidden md:block"
-                          src={imageUrl}
-                          alt="dress"
-                        />
-                      </div>
-                      <div className="border-b border-gray-200 md:flex-row flex-col flex justify-between items-start w-full pb-8 space-y-4 md:space-y-0">
-                        <div className="w-full flex flex-col justify-start items-start space-y-8">
-                          <h3 className="text-xl dark:text-white xl:text-2xl font-semibold leading-6 text-gray-800">
-                            {od?.Product?.name}
-                          </h3>
-                          <div className="flex justify-start items-start flex-col space-y-2">
-                            <p className="text-sm dark:text-white leading-none text-gray-800">
-                              <span className="dark:text-gray-400 text-gray-300">
-                                Category:{" "}
-                              </span>{" "}
-                              {od?.Product?.Category?.categoryName}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex justify-between space-x-8 items-start w-full">
-                          <p className="text-base dark:text-white xl:text-lg leading-6">
-                            Rs.{od.Product.price}{" "}
-                          </p>
-                          <p className="text-base dark:text-white xl:text-lg leading-6 text-gray-800">
-                            {od.quantity}
-                          </p>
-                          <p className="text-base dark:text-white xl:text-lg font-semibold leading-6 text-gray-800">
-                            Rs.{od.quantity * od.Product.price}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-            </div>
-            <div className="flex justify-center flex-col md:flex-row flex-col items-stretch w-full space-y-4 md:space-y-0 md:space-x-6 xl:space-x-8">
-              <div className="flex flex-col px-4 py-6 md:p-6 xl:p-8 w-full bg-gray-50 dark:bg-gray-800 space-y-6">
-                <h3 className="text-xl dark:text-white font-semibold leading-5 text-gray-800">
-                  Summary
-                </h3>
 
-                <div className="flex justify-between items-center w-full">
-                  <p className="text-base dark:text-white font-semibold leading-4 text-gray-800">
-                    Total
-                  </p>
-                  <p className="text-base dark:text-gray-300 font-semibold leading-4 text-gray-600">
-                    Rs. {orderDetails[0]?.Order?.totalPrice}
-                  </p>
-                </div>
-              </div>
-              <div className="flex flex-col justify-center px-4 py-6 md:p-6 xl:p-8 w-full bg-gray-50 dark:bg-gray-800 space-y-6">
-                <h3 className="text-xl dark:text-white font-semibold leading-5 text-gray-800">
-                  Shipping
-                </h3>
-                <div className="flex justify-between items-start w-full">
-                  <div className="flex justify-center items-center space-x-4">
-                    <div className="w-8 h-8">
+        <div className="mt-8 flex flex-col gap-6 xl:flex-row xl:items-start">
+          <div className="w-full space-y-6">
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-md shadow-md p-4 md:p-6 xl:p-8">
+              <h2 className="text-lg md:text-xl font-semibold text-gray-800 dark:text-white mb-4">
+                Customer’s Cart
+              </h2>
+              {orderDetails.map((od) => {
+                const imageUrl = od.Product.image[0]
+                  ? `https://res.cloudinary.com/dxpe7jikz/image/upload/${CLOUDINARY_VERSION}${od.Product.image[0].replace(
+                      "/uploads",
+                      ""
+                    )}`
+                  : "https://via.placeholder.com/300x300?text=No+Image";
+                return (
+                  <div
+                    key={od.id}
+                    className="flex flex-col sm:flex-row gap-4 border-b pb-4 mb-4"
+                  >
+                    <div className="w-full sm:w-32 h-32 flex-shrink-0">
                       <img
-                        className="w-full h-full"
-                        alt="logo"
-                        src="https://i.ibb.co/L8KSdNQ/image-3.png"
+                        src={imageUrl}
+                        alt={od?.Product?.name || "Product Image"}
+                        className="w-full h-full object-cover rounded-md border shadow-sm"
                       />
                     </div>
-                    <div className="flex flex-col justify-start items-center">
-                      <p className="text-lg leading-6 dark:text-white font-semibold text-gray-800">
-                        DPD Delivery
-                        <br />
-                        <span className="font-normal">
-                          Delivery with 24 Hours
-                        </span>
-                      </p>
+                    <div className="flex flex-col justify-between flex-grow space-y-2">
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
+                          {od?.Product?.name}
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">
+                          Category: {od?.Product?.Category?.categoryName}
+                        </p>
+                      </div>
+                      <div className="flex justify-between text-sm font-medium text-gray-800 dark:text-white">
+                        <p>Price: Rs.{od.Product.price}</p>
+                        <p>Qty: {od.quantity}</p>
+                        <p>Total: Rs.{od.quantity * od.Product.price}</p>
+                      </div>
                     </div>
                   </div>
-                  <p className="text-lg font-semibold leading-6 dark:text-white text-gray-800">
-                    Rs 100.00
+                );
+              })}
+            </div>
+
+            <div className="flex flex-col md:flex-row gap-6">
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-md shadow-md p-4 md:p-6 xl:p-8 w-full">
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
+                  Summary
+                </h3>
+                <div className="flex justify-between text-sm font-medium text-gray-800 dark:text-white">
+                  <p>Total</p>
+                  <p>Rs. {orderDetails[0]?.Order?.totalPrice}</p>
+                </div>
+              </div>
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-md shadow-md p-4 md:p-6 xl:p-8 w-full">
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
+                  Shipping
+                </h3>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <img
+                      src="https://i.ibb.co/L8KSdNQ/image-3.png"
+                      alt="logo"
+                      className="w-8 h-8"
+                    />
+                    <p className="text-sm text-gray-800 dark:text-white">
+                      DPD Delivery <br />
+                      <span className="text-xs font-normal">
+                        Delivery within 24 Hours
+                      </span>
+                    </p>
+                  </div>
+                  <p className="text-sm font-medium text-gray-800 dark:text-white">
+                    Rs. 100.00
                   </p>
                 </div>
               </div>
             </div>
           </div>
-          <div className="bg-gray-50 dark:bg-gray-800 w-full xl:w-96 flex justify-between items-center md:items-start px-4 py-6 md:p-6 xl:p-8 flex-col">
-            <h3 className="text-xl dark:text-white font-semibold leading-5 text-gray-800">
+
+          <div className="w-full xl:w-96 bg-gray-50 dark:bg-gray-800 rounded-md shadow-md p-4 md:p-6 xl:p-8">
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
               Customer
             </h3>
-            <div className="flex flex-col md:flex-row xl:flex-col justify-start items-stretch h-full w-full md:space-x-6 lg:space-x-8 xl:space-x-0">
-              <div className="flex flex-col justify-start items-start flex-shrink-0">
-                <div className="flex justify-center w-full md:justify-start items-center space-x-4 py-8 border-b border-gray-200">
-                  <div className="flex justify-start items-start flex-col space-y-2">
-                    <p className="text-sm dark:text-gray-300 leading-5 text-gray-600">
-                      Full Name : {orderDetails[0]?.Order?.firstName}{" "}
-                      {orderDetails[0]?.Order?.lastName}
-                    </p>
+            <div className="text-sm text-gray-600 dark:text-gray-300 space-y-2 mb-6">
+              <p>
+                Full Name: {orderDetails[0]?.Order?.firstName}{" "}
+                {orderDetails[0]?.Order?.lastName}
+              </p>
+              <p>Phone No: {orderDetails[0]?.Order?.phoneNumber}</p>
+              <p>
+                Shipping Address: {orderDetails[0]?.Order?.addressLine},{" "}
+                {orderDetails[0]?.Order?.city}, {orderDetails[0]?.Order?.state}
+              </p>
+            </div>
 
-                    <p className="text-sm dark:text-gray-300 leading-5 text-gray-600">
-                      Phone No : {orderDetails[0]?.Order?.phoneNumber}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className="flex justify-between xl:h-full items-stretch w-full flex-col mt-6 md:mt-0">
-                <div className="flex justify-center md:justify-start xl:flex-col flex-col md:space-x-6 lg:space-x-8 xl:space-x-0 space-y-4 xl:space-y-12 md:space-y-0 md:flex-row items-center md:items-start">
-                  <div className="flex justify-center md:justify-start items-center md:items-start flex-col space-y-4 xl:mt-8">
-                    <p className="text-base dark:text-white font-semibold leading-4 text-center md:text-left text-gray-800">
-                      Shipping Address
-                    </p>
-                    <p className="w-48 lg:w-full dark:text-gray-300 xl:w-48 text-center md:text-left text-sm leading-5 text-gray-600">
-                      {" "}
-                      {orderDetails[0]?.Order?.addressLine},{" "}
-                      {orderDetails[0]?.Order?.city},{" "}
-                      {orderDetails[0]?.Order?.state}
-                    </p>
-                  </div>
-                </div>
-                <label htmlFor="">Change Payment status</label>
-                <select name="" id="">
-                  <option value="paid">paid</option>
-                  <option value="unpaid">unpaid</option>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-white mb-1">
+                  Change Payment Status
+                </label>
+                <select
+                  className="w-full border rounded-md px-2 py-1 dark:bg-gray-700 dark:text-white"
+                  value={paymentStatus}
+                  onChange={handlePaymentStatusChange}
+                >
+                  <option value="paid">Paid</option>
+                  <option value="unpaid">Unpaid</option>
                 </select>
-                <div className="flex w-full justify-center items-center md:justify-start md:items-start">
-                  {orderDetails[0]?.Order?.orderStatus !==
-                    OrderStatus?.Cancelled && (
-                    <>
-                      <label htmlFor="">Change Order status</label>
-                      <select  name="" id="">
-                        <option value="pending">pending</option>
-                        <option value="delivered">delivered</option>
-                        <option value="ontheway">ontheway</option>
-                        <option value="preparation">preparation</option>
-                        <option value="cancelled">cancelled</option>
-                      </select>
-                    </>
-                  )}
-                </div>
               </div>
+              {orderStatus !== "cancelled" && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-white mb-1">
+                    Change Order Status
+                  </label>
+                  <select
+                    onChange={handleOrderStatusChange}
+                    className="w-full border rounded-md px-2 py-1 dark:bg-gray-700 dark:text-white"
+                    value={orderStatus}
+                  >
+                    <option value="pending">Pending</option>
+                    <option value="delivered">Delivered</option>
+                    <option value="ontheway">On The Way</option>
+                    <option value="preparation">Preparation</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                </div>
+              )}
             </div>
           </div>
         </div>

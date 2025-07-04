@@ -3,7 +3,6 @@ import { AppDispatch, RootState } from "./store";
 import { API, APIS } from "../globals/http";
 import { Status } from "./authSlice";
 import { IProduct } from "@/app/products/types";
-import { request } from "http";
 
 interface IProducts {
   products: IProduct[];
@@ -56,7 +55,7 @@ export const {
 } = productSlice.actions;
 export default productSlice.reducer;
 
-export function createProduct(data: IProduct) {
+export function createProduct(data: FormData) {
   return async function addProductThunk(dispatch: AppDispatch) {
     try {
      
@@ -155,21 +154,19 @@ export function updateProducts(id: string, data: FormData) {
     try {
       const res = await APIS.patch(`/product/${id}`, data, {
         headers: {
-          "Content-Type": "multipart/form-data",
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${localStorage.getItem('token')}` // Add auth header
         },
       });
+      
       if (res.status === 200) {
         dispatch(updateProduct(res.data.data));
         return res.data;
-      } else {
-        dispatch(setStatus(Status.ERROR));
-        throw new Error(res.data.message || "Failed to update product");
       }
+      throw new Error(res.data.message || "Update failed");
     } catch (error: any) {
-      dispatch(setStatus(Status.ERROR));
-      throw new Error(
-        error.response?.data?.message || "Failed to update product"
-      );
+      console.error('Update error:', error.response?.data || error.message);
+      throw error; // Re-throw for error handling in component
     }
   };
 }

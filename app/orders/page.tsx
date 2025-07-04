@@ -141,7 +141,7 @@ export default function Orders() {
                     <TableCell>{getStatusBadge(order?.orderStatus)}</TableCell>
                     <TableCell>{getPaymentStatus(order?.Payment?.paymentStatus)}</TableCell>
                     <TableCell className="text-right">
-                      ${order?.totalPrice.toFixed(2)}
+                      Rs {order?.totalPrice.toFixed(2)}
                     </TableCell>
                   </TableRow>
                 ))}

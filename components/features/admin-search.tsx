@@ -5,21 +5,40 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "../ui/input";
 import { Search } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect } from "react";
+import qs from "query-string";
 
 const formSchema = z.object({
   search: z.string(),
 });
 
 export default function AdminSearch() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const currentSearch = searchParams.get("search") || "";
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      search: "",
+      search: currentSearch,
     },
   });
 
+  // Update form value when URL changes
+  useEffect(() => {
+    form.setValue("search", currentSearch);
+  }, [currentSearch, form]);
+
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    console.log(values);
+    const url = qs.stringifyUrl({
+      url: window.location.href,
+      query: {
+        search: values.search || undefined,
+      },
+    }, { skipNull: true });
+
+    router.push(url);
   };
 
   return (

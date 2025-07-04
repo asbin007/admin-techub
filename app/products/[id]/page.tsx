@@ -52,7 +52,7 @@ export default function ProductDetailsPage() {
   useEffect(() => {
     if (status === Status.SUCCESS && id) {
       dispatch(fetchProductAdmin(id as string)); // Refresh product details
-      setIsModalOpen(false); // Close the modal
+      setIsModalOpen(false); 
     }
   }, [status, dispatch, id]);
 
